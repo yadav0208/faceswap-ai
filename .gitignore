@@ -1,0 +1,75 @@
+# ── Python / Backend ─────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+venv/
+env/
+.venv/
+*.env
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads & generated outputs (don't commit user data)
+backend/uploads/
+backend/outputs/
+
+# AI Models (large binary files)
+backend/models/
+*.onnx
+*.pt
+*.pth
+*.bin
+
+# InsightFace cached models
+.insightface/
+
+# Logs
+*.log
+logs/
+
+# ── Node / Frontend ───────────────────────────────
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Expo
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Metro
+.metro-health-check*
+
+# ── OS ────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+desktop.ini
+
+# ── IDE ───────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# ── Secrets ───────────────────────────────────────
+.env
+.env.local
+.env.production
+secrets/

@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+venv/
+.env
+*.db
+*.sqlite3
+uploads/
+outputs/
+models/
+pose_templates/cached_photos/
+.insightface/
+*.log
