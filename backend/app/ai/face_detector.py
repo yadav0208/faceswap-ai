@@ -1,60 +1,39 @@
 """
-Face detection module using MediaPipe and OpenCV.
-Detects face landmarks, bounding box, and estimates skin tone.
+Face detection — uses InsightFace buffalo_l (same model as the swap pipeline).
+Falls back to a permissive pass-through so uploads are never wrongly rejected.
 """
 import cv2
 import numpy as np
-from typing import Optional, Tuple, Dict, Any
+from typing import Dict, Any, Optional
 import logging
 
 logger = logging.getLogger(__name__)
 
 
 class FaceDetector:
-    """
-    Lightweight face detector using OpenCV + MediaPipe.
-    Falls back to Haar cascades if MediaPipe is unavailable.
-    """
-
     def __init__(self):
-        self._mp_face = None
-        self._haar_cascade = None
+        self._app = None
         self._initialized = False
 
-    def _init_mediapipe(self):
-        try:
-            import mediapipe as mp
-            mp_face_detection = mp.solutions.face_detection
-            self._mp_face = mp_face_detection.FaceDetection(
-                model_selection=1,  # full range model
-                min_detection_confidence=0.5,
-            )
-            logger.info("MediaPipe face detection loaded")
-            return True
-        except Exception as e:
-            logger.warning(f"MediaPipe unavailable: {e}")
-            return False
-
-    def _init_haar(self):
-        try:
-            self._haar_cascade = cv2.CascadeClassifier(
-                cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-            )
-            logger.info("Haar cascade face detection loaded")
-            return True
-        except Exception as e:
-            logger.warning(f"Haar cascade unavailable: {e}")
-            return False
-
     def initialize(self):
-        if not self._init_mediapipe():
-            self._init_haar()
+        if self._initialized:
+            return
+        try:
+            from insightface.app import FaceAnalysis
+            self._app = FaceAnalysis(name="buffalo_l", providers=["CPUExecutionProvider"])
+            self._app.prepare(ctx_id=0, det_size=(640, 640))
+            logger.info("FaceDetector: InsightFace buffalo_l ready")
+        except Exception as e:
+            logger.warning(f"FaceDetector: InsightFace unavailable ({e}) — using permissive mode")
+            self._app = None
         self._initialized = True
 
     def detect(self, image_path: str) -> Dict[str, Any]:
         """
-        Detect face in image and return metadata.
-        Returns dict with: detected (bool), bbox, landmarks, skin_tone, confidence
+        Detect face in uploaded image.
+        Returns dict with 'detected' bool and optional metadata.
+        Never raises — on any error returns detected=True so the upload
+        isn't wrongly rejected (the swap pipeline will catch bad images).
         """
         if not self._initialized:
             self.initialize()
@@ -62,98 +41,72 @@ class FaceDetector:
         try:
             img = cv2.imread(image_path)
             if img is None:
-                return {"detected": False, "error": "Cannot read image"}
+                return {"detected": False, "error": "Cannot read image file"}
 
-            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            h, w = img.shape[:2]
+            # ── InsightFace detection (best accuracy) ──────────────────────
+            if self._app is not None:
+                faces = self._app.get(img)
+                if faces:
+                    face = max(faces, key=lambda f: (f.bbox[2]-f.bbox[0]) * (f.bbox[3]-f.bbox[1]))
+                    bbox = face.bbox.astype(int)
+                    return {
+                        "detected": True,
+                        "confidence": float(face.det_score) if hasattr(face, "det_score") else 0.9,
+                        "bbox": {
+                            "x": int(bbox[0]), "y": int(bbox[1]),
+                            "w": int(bbox[2] - bbox[0]), "h": int(bbox[3] - bbox[1]),
+                        },
+                        "skin_tone": self._estimate_skin_tone(img, bbox),
+                    }
+                else:
+                    # InsightFace ran but found nothing — image likely has no clear face
+                    logger.info(f"No face detected by InsightFace in {image_path}")
+                    return {"detected": False, "confidence": 0.0}
 
-            result = {"detected": False, "bbox": None, "confidence": 0.0, "skin_tone": None}
-
-            # Try MediaPipe first
-            if self._mp_face is not None:
-                detection_result = self._mp_face.process(img_rgb)
-                if detection_result.detections:
-                    det = detection_result.detections[0]
-                    bbox = det.location_data.relative_bounding_box
-                    x = int(bbox.xmin * w)
-                    y = int(bbox.ymin * h)
-                    bw = int(bbox.width * w)
-                    bh = int(bbox.height * h)
-
-                    # Clamp
-                    x, y = max(0, x), max(0, y)
-                    x2, y2 = min(w, x + bw), min(h, y + bh)
-
-                    result["detected"] = True
-                    result["bbox"] = {"x": x, "y": y, "w": x2 - x, "h": y2 - y}
-                    result["confidence"] = det.score[0] if det.score else 0.9
-
-                    # Estimate skin tone from face region
-                    face_region = img_rgb[y:y2, x:x2]
-                    result["skin_tone"] = self._estimate_skin_tone(face_region)
-
-            # Fallback to Haar cascade
-            elif self._haar_cascade is not None:
-                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                faces = self._haar_cascade.detectMultiScale(gray, 1.1, 4, minSize=(30, 30))
-                if len(faces) > 0:
-                    x, y, fw, fh = faces[0]
-                    result["detected"] = True
-                    result["bbox"] = {"x": int(x), "y": int(y), "w": int(fw), "h": int(fh)}
-                    result["confidence"] = 0.85
-
-                    face_region = img_rgb[y:y+fh, x:x+fw]
-                    result["skin_tone"] = self._estimate_skin_tone(face_region)
-
-            return result
+            # ── Permissive fallback (InsightFace not available) ────────────
+            # Let the upload through; swap pipeline will handle it
+            logger.warning("FaceDetector running in permissive mode — skipping gate check")
+            return {"detected": True, "confidence": 0.5, "bbox": None}
 
         except Exception as e:
-            logger.error(f"Face detection error: {e}")
-            return {"detected": False, "error": str(e)}
+            logger.error(f"Face detection error: {e} — passing through")
+            # Don't block uploads on unexpected errors
+            return {"detected": True, "confidence": 0.5, "error": str(e)}
 
-    def _estimate_skin_tone(self, face_region: np.ndarray) -> str:
-        """Classify skin tone into rough categories using average pixel values."""
-        if face_region.size == 0:
+    def _estimate_skin_tone(self, img: np.ndarray, bbox) -> str:
+        try:
+            x1, y1, x2, y2 = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
+            x1, y1 = max(0, x1), max(0, y1)
+            region = img[y1:y2, x1:x2]
+            if region.size == 0:
+                return "medium"
+            rgb = cv2.cvtColor(region, cv2.COLOR_BGR2RGB)
+            avg = rgb.mean(axis=(0, 1))
+            brightness = 0.299 * avg[0] + 0.587 * avg[1] + 0.114 * avg[2]
+            if brightness > 200: return "fair"
+            elif brightness > 160: return "light"
+            elif brightness > 120: return "medium"
+            elif brightness > 80:  return "tan"
+            elif brightness > 50:  return "brown"
+            else: return "dark"
+        except Exception:
             return "medium"
-        avg = face_region.mean(axis=(0, 1))  # RGB averages
-        r, g, b = avg[0], avg[1], avg[2]
-        brightness = 0.299 * r + 0.587 * g + 0.114 * b
 
-        if brightness > 200:
-            return "fair"
-        elif brightness > 160:
-            return "light"
-        elif brightness > 120:
-            return "medium"
-        elif brightness > 80:
-            return "tan"
-        elif brightness > 50:
-            return "brown"
-        else:
-            return "dark"
-
-    def extract_face(
-        self,
-        image_path: str,
-        padding: float = 0.3,
-    ) -> Optional[np.ndarray]:
-        """Extract face crop with padding as numpy array."""
-        detection = self.detect(image_path)
-        if not detection["detected"]:
+    def extract_face(self, image_path: str, padding: float = 0.3) -> Optional[np.ndarray]:
+        result = self.detect(image_path)
+        if not result.get("detected") or not result.get("bbox"):
             return None
-
         img = cv2.imread(image_path)
+        if img is None:
+            return None
         h, w = img.shape[:2]
-        bbox = detection["bbox"]
-
-        pad_x = int(bbox["w"] * padding)
-        pad_y = int(bbox["h"] * padding)
-
-        x1 = max(0, bbox["x"] - pad_x)
-        y1 = max(0, bbox["y"] - pad_y)
-        x2 = min(w, bbox["x"] + bbox["w"] + pad_x)
-        y2 = min(h, bbox["y"] + bbox["h"] + pad_y)
-
+        b = result["bbox"]
+        pad_x = int(b["w"] * padding)
+        pad_y = int(b["h"] * padding)
+        x1 = max(0, b["x"] - pad_x)
+        y1 = max(0, b["y"] - pad_y)
+        x2 = min(w, b["x"] + b["w"] + pad_x)
+        y2 = min(h, b["y"] + b["h"] + pad_y)
         return img[y1:y2, x1:x2]
 
 

@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Change this to your machine's IP when testing on a device
-const BASE_URL = 'http://10.159.49.23:8000';
+const BASE_URL = 'http://10.170.167.22:8000';
 
 class ApiService {
   private client: AxiosInstance;
@@ -144,7 +144,7 @@ class ApiService {
 }
 
 export const api = new ApiService();
-export const API_BASE = 'http://localhost:8000';
+export const API_BASE = 'http://10.170.167.22:8000';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

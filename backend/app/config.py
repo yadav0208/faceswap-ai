@@ -4,7 +4,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     APP_NAME: str = "FaceSwap AI"
-    SECRET_KEY: str = "dev-secret-key"
+    SECRET_KEY: str = "dev-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 days
 
@@ -16,7 +16,13 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10MB
     ALLOWED_ORIGINS: str = "*"
 
-    USE_AI_MODELS: bool = False
+    # API key — required on every request via X-API-Key header
+    API_KEY: str = "change-this-api-key"
+
+    # AES-256 encryption key — 64 hex chars (32 bytes)
+    ENCRYPTION_KEY: str = "0" * 64
+
+    USE_AI_MODELS: bool = True
     HF_TOKEN: Optional[str] = None
     DEVICE: str = "cpu"
 

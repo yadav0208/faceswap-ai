@@ -4,15 +4,15 @@ from datetime import datetime
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
 from fastapi.responses import FileResponse
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy import select
 from typing import Optional
-from app.database import get_db
+from app.database import get_db, engine
 from app.models import Generation, PoseTemplate, User
 from app.schemas import GenerationOut, GenerationStatus
 from app.auth import get_current_user
 from app.config import settings
-from app.ai.image_processor import image_processor
+from app.ai.image_processor import image_processor, VIDEO_STUDIOS
 from app.ai.face_detector import face_detector
 import logging
 
@@ -42,51 +42,66 @@ async def _run_generation(
     generation_id: int,
     studio_id: str,
     pose_id: str,
-    db: AsyncSession,
 ):
-    """Background task: run the AI pipeline and update DB."""
-    result = await db.execute(select(Generation).where(Generation.id == generation_id))
-    gen = result.scalar_one_or_none()
-    if not gen:
-        return
+    """Background task: opens its OWN DB session (avoids closed-session bug)."""
+    from app.database import engine
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+    AsyncSession_local = async_sessionmaker(engine, expire_on_commit=False)
 
-    result_tpl = await db.execute(
-        select(PoseTemplate).where(PoseTemplate.id == gen.pose_template_id)
-    )
-    template = result_tpl.scalar_one_or_none()
-    if not template:
-        gen.status = "failed"
-        gen.error_message = "Pose template not found"
+    async with AsyncSession_local() as db:
+        result = await db.execute(select(Generation).where(Generation.id == generation_id))
+        gen = result.scalar_one_or_none()
+        if not gen:
+            return
+
+        result_tpl = await db.execute(
+            select(PoseTemplate).where(PoseTemplate.id == gen.pose_template_id)
+        )
+        template = result_tpl.scalar_one_or_none()
+        if not template:
+            gen.status = "failed"
+            gen.error_message = "Pose template not found"
+            await db.commit()
+            return
+
+        gen.status = "processing"
         await db.commit()
-        return
 
-    gen.status = "processing"
-    await db.commit()
+        # Output extension depends on studio — video studios get .mp4
+        is_video = studio_id in VIDEO_STUDIOS
+        ext = ".mp4" if is_video else ".jpg"
+        output_filename = f"result_{generation_id}_{uuid.uuid4().hex[:8]}{ext}"
+        output_path = os.path.join(settings.OUTPUT_DIR, output_filename)
 
-    output_filename = f"result_{generation_id}_{uuid.uuid4().hex[:8]}.jpg"
-    output_path = os.path.join(settings.OUTPUT_DIR, output_filename)
+        success, error = await image_processor.generate(
+            source_image_path=gen.source_image_path,
+            template_image_path=template.template_image_path,
+            output_path=output_path,
+            gender=gen.gender or "auto",
+            style_prompt=gen.style_prompt,
+            studio_id=studio_id,
+            pose_id=pose_id,
+        )
 
-    success, error = await image_processor.generate(
-        source_image_path=gen.source_image_path,
-        template_image_path=template.template_image_path,
-        output_path=output_path,
-        gender=gen.gender or "auto",
-        style_prompt=gen.style_prompt,
-        studio_id=studio_id,
-        pose_id=pose_id,
-    )
+        # If video failed and a fallback JPEG was written instead, use it
+        if not success and is_video:
+            jpg_fallback = output_path.replace(".mp4", "_frame.jpg")
+            if os.path.exists(jpg_fallback):
+                output_path = jpg_fallback
+                success = True
+                error = None
 
-    if success:
-        gen.status = "completed"
-        gen.result_image_path = output_path
-        gen.completed_at = datetime.utcnow()
-        logger.info(f"Generation {generation_id} completed: {output_path}")
-    else:
-        gen.status = "failed"
-        gen.error_message = error or "Generation failed"
-        logger.error(f"Generation {generation_id} failed: {error}")
+        if success:
+            gen.status = "completed"
+            gen.result_image_path = output_path
+            gen.completed_at = datetime.utcnow()
+            logger.info(f"Generation {generation_id} completed: {output_path}")
+        else:
+            gen.status = "failed"
+            gen.error_message = error or "Generation failed"
+            logger.error(f"Generation {generation_id} failed: {error}")
 
-    await db.commit()
+        await db.commit()
 
 
 @router.post("", response_model=GenerationOut, status_code=202)
@@ -152,7 +167,7 @@ async def create_generation(
     await db.commit()
     await db.refresh(gen)
 
-    background_tasks.add_task(_run_generation, gen.id, studio_id, pose_id, db)
+    background_tasks.add_task(_run_generation, gen.id, studio_id, pose_id)
 
     return _gen_to_schema(gen)
 

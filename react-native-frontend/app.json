@@ -1,9 +1,15 @@
 {
   "expo": {
-    "name": "FaceSwap AI",
+    "name": "AI Catch",
     "slug": "faceswap-ai",
     "version": "1.0.0",
     "orientation": "portrait",
+    "updates": {
+      "enabled": false
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "scheme": "faceswapai",

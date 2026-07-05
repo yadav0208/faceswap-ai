@@ -1,12 +1,7 @@
 import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  Platform,
+  View, Text, StyleSheet, ScrollView,
+  TouchableOpacity, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,21 +9,22 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Radius } from '../../constants/theme';
 
 const MENU_ITEMS = [
-  { icon: 'person-outline', label: 'Edit Profile', section: 'account' },
-  { icon: 'notifications-outline', label: 'Notifications', section: 'account' },
-  { icon: 'shield-checkmark-outline', label: 'Privacy & Security', section: 'account' },
-  { icon: 'diamond-outline', label: 'Upgrade to Pro', section: 'billing', highlight: true },
-  { icon: 'card-outline', label: 'Billing & Subscription', section: 'billing' },
-  { icon: 'help-circle-outline', label: 'Help & Support', section: 'support' },
-  { icon: 'star-outline', label: 'Rate the App', section: 'support' },
-  { icon: 'share-social-outline', label: 'Share with Friends', section: 'support' },
-  { icon: 'log-out-outline', label: 'Log Out', section: 'danger', danger: true },
+  { icon: 'person-outline',           label: 'Edit Profile',          section: 'account' },
+  { icon: 'notifications-outline',    label: 'Notifications',         section: 'account' },
+  { icon: 'shield-checkmark-outline', label: 'Privacy & Security',    section: 'account' },
+  { icon: 'diamond-outline',          label: 'Upgrade to Pro',        section: 'billing', highlight: true },
+  { icon: 'flash-outline',            label: 'Buy Credits',           section: 'billing' },
+  { icon: 'card-outline',             label: 'Billing & Subscription',section: 'billing' },
+  { icon: 'help-circle-outline',      label: 'Help & Support',        section: 'support' },
+  { icon: 'star-outline',             label: 'Rate the App',          section: 'support' },
+  { icon: 'share-social-outline',     label: 'Share with Friends',    section: 'support' },
+  { icon: 'log-out-outline',          label: 'Log Out',               section: 'danger', danger: true },
 ];
 
 const SECTIONS = ['account', 'billing', 'support', 'danger'];
 const SECTION_LABELS: Record<string, string> = {
   account: 'Account',
-  billing: 'Subscription',
+  billing: 'Subscription & Credits',
   support: 'Support',
   danger: '',
 };
@@ -60,40 +56,37 @@ export default function ProfileScreen() {
                 colors={[Colors.brand.purple, Colors.brand.purpleLight]}
                 style={styles.avatarGradient}
               >
-                <Text style={styles.avatarInitial}>P</Text>
+                <Text style={styles.avatarInitial}>A</Text>
               </LinearGradient>
               <TouchableOpacity style={styles.avatarEdit}>
                 <Ionicons name="camera" size={14} color="#fff" />
               </TouchableOpacity>
             </View>
-            <Text style={styles.name}>Pankaj</Text>
-            <Text style={styles.email}>pankaj@example.com</Text>
+            <Text style={styles.name}>AI Creator</Text>
+            <Text style={styles.email}>creator@aicatch.app</Text>
 
-            {/* Pro badge */}
             <View style={styles.freeBadge}>
               <Ionicons name="flash" size={12} color="#F59E0B" />
-              <Text style={styles.freeBadgeText}>Free Plan</Text>
+              <Text style={styles.freeBadgeText}>Free Plan · 5 credits left</Text>
             </View>
 
-            {/* Upgrade button */}
             <TouchableOpacity style={styles.upgradeBtn} activeOpacity={0.85}>
               <LinearGradient
                 colors={[Colors.brand.purple, Colors.brand.purpleLight]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={StyleSheet.absoluteFill}
               />
               <Ionicons name="diamond-outline" size={16} color="#fff" />
-              <Text style={styles.upgradeBtnText}>Upgrade to Pro</Text>
+              <Text style={styles.upgradeBtnText}>Upgrade to Pro — Unlimited</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Stats */}
+          {/* Usage stats */}
           <View style={styles.statsRow}>
             {[
-              { label: 'Generated', value: '24', icon: 'sparkles' },
-              { label: 'Saved', value: '12', icon: 'bookmark' },
-              { label: 'Credits', value: '5', icon: 'flash' },
+              { label: 'Videos',  value: '16', icon: 'film' },
+              { label: 'Images',  value: '8',  icon: 'image' },
+              { label: 'Credits', value: '5',  icon: 'flash' },
             ].map((s) => (
               <View key={s.label} style={styles.statCard}>
                 <Ionicons name={s.icon as any} size={18} color={Colors.brand.purpleLight} />
@@ -116,46 +109,33 @@ export default function ProfileScreen() {
                   {items.map((item, i) => (
                     <TouchableOpacity
                       key={item.label}
-                      style={[
-                        styles.menuRow,
-                        i < items.length - 1 && styles.menuRowBorder,
-                      ]}
+                      style={[styles.menuRow, i < items.length - 1 && styles.menuRowBorder]}
                       activeOpacity={0.75}
                     >
-                      <View
-                        style={[
-                          styles.menuIconWrap,
-                          item.highlight && styles.menuIconHighlight,
-                          item.danger && styles.menuIconDanger,
-                        ]}
-                      >
+                      <View style={[
+                        styles.menuIconWrap,
+                        (item as any).highlight && styles.menuIconHighlight,
+                        (item as any).danger   && styles.menuIconDanger,
+                      ]}>
                         <Ionicons
                           name={item.icon as any}
                           size={18}
                           color={
-                            item.danger
-                              ? Colors.status.error
-                              : item.highlight
-                              ? Colors.brand.purpleLight
-                              : 'rgba(255,255,255,0.65)'
+                            (item as any).danger    ? Colors.status.error :
+                            (item as any).highlight ? Colors.brand.purpleLight :
+                            'rgba(255,255,255,0.65)'
                           }
                         />
                       </View>
-                      <Text
-                        style={[
-                          styles.menuLabel,
-                          item.danger && styles.menuLabelDanger,
-                          item.highlight && styles.menuLabelHighlight,
-                        ]}
-                      >
+                      <Text style={[
+                        styles.menuLabel,
+                        (item as any).danger   && styles.menuLabelDanger,
+                        (item as any).highlight && styles.menuLabelHighlight,
+                      ]}>
                         {item.label}
                       </Text>
-                      {!item.danger && (
-                        <Ionicons
-                          name="chevron-forward"
-                          size={16}
-                          color="rgba(255,255,255,0.2)"
-                        />
+                      {!(item as any).danger && (
+                        <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.2)" />
                       )}
                     </TouchableOpacity>
                   ))}
@@ -164,7 +144,7 @@ export default function ProfileScreen() {
             );
           })}
 
-          <Text style={styles.version}>FaceSwap AI • v1.0.0</Text>
+          <Text style={styles.version}>AI Catch · v1.0.0</Text>
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -175,11 +155,8 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.bg.primary },
   safe: { flex: 1 },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 12,
   },
   title: { fontSize: 26, fontWeight: '700', color: '#fff' },
   iconBtn: {
@@ -187,22 +164,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.07)',
     alignItems: 'center', justifyContent: 'center',
   },
-
-  /* Avatar card */
   avatarCard: {
-    marginHorizontal: 16,
-    borderRadius: Radius.lg,
-    padding: 20,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    overflow: 'hidden',
-    marginBottom: 14,
+    marginHorizontal: 16, borderRadius: Radius.lg, padding: 20,
+    alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
+    overflow: 'hidden', marginBottom: 14,
   },
   avatarWrap: { position: 'relative', marginBottom: 12 },
   avatarGradient: {
-    width: 80, height: 80,
-    borderRadius: 40,
+    width: 80, height: 80, borderRadius: 40,
     alignItems: 'center', justifyContent: 'center',
   },
   avatarInitial: { fontSize: 32, fontWeight: '700', color: '#fff' },
@@ -216,8 +185,8 @@ const styles = StyleSheet.create({
   name: { fontSize: 20, fontWeight: '700', color: '#fff', marginBottom: 4 },
   email: { fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 12 },
   freeBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 10, paddingVertical: 4,
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 12, paddingVertical: 5,
     backgroundColor: 'rgba(245,158,11,0.12)',
     borderRadius: Radius.full, marginBottom: 16,
     borderWidth: 1, borderColor: 'rgba(245,158,11,0.25)',
@@ -228,58 +197,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 8, overflow: 'hidden',
   },
-  upgradeBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
-
-  /* Stats */
-  statsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    paddingHorizontal: 16,
-    marginBottom: 20,
-  },
+  upgradeBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  statsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 20 },
   statCard: {
-    flex: 1,
-    backgroundColor: Colors.bg.card,
-    borderRadius: Radius.md,
-    alignItems: 'center',
-    paddingVertical: 14,
-    gap: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    flex: 1, backgroundColor: Colors.bg.card, borderRadius: Radius.md,
+    alignItems: 'center', paddingVertical: 14, gap: 4,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
   },
   statValue: { fontSize: 20, fontWeight: '700', color: '#fff' },
   statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.4)' },
-
-  /* Menu */
   menuSection: { marginBottom: 20 },
   menuSectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.35)',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    paddingHorizontal: 16,
-    marginBottom: 8,
+    fontSize: 12, fontWeight: '700', color: 'rgba(255,255,255,0.35)',
+    textTransform: 'uppercase', letterSpacing: 0.8,
+    paddingHorizontal: 16, marginBottom: 8,
   },
   menuGroup: {
-    marginHorizontal: 16,
-    backgroundColor: Colors.bg.card,
-    borderRadius: Radius.lg,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    marginHorizontal: 16, backgroundColor: Colors.bg.card,
+    borderRadius: Radius.lg, overflow: 'hidden',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
   },
   menuRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    gap: 12,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 14, paddingVertical: 14, gap: 12,
   },
-  menuRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
-  },
+  menuRowBorder: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
   menuIconWrap: {
     width: 36, height: 36, borderRadius: 10,
     backgroundColor: 'rgba(255,255,255,0.06)',
@@ -290,12 +232,8 @@ const styles = StyleSheet.create({
   menuLabel: { flex: 1, fontSize: 15, fontWeight: '500', color: '#fff' },
   menuLabelDanger: { color: Colors.status.error },
   menuLabelHighlight: { color: Colors.brand.purpleLight },
-
   version: {
-    textAlign: 'center',
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.2)',
-    marginBottom: 10,
-    marginTop: 4,
+    textAlign: 'center', fontSize: 12,
+    color: 'rgba(255,255,255,0.2)', marginBottom: 10, marginTop: 4,
   },
 });
