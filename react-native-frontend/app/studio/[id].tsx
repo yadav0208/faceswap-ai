@@ -16,7 +16,7 @@ import { STUDIOS } from '../../constants/studios';
 const { width: SW } = Dimensions.get('window');
 const API = 'http://10.170.167.22:8000';
 
-// Style options per tool — matches AI Catch content
+// Style options per tool — matches Fun With AI content
 const STYLES: Record<string, { id: string; label: string; imageUrl: string }[]> = {
   ai_videos: [
     { id: 'collage',   label: 'Character Collage', imageUrl: 'https://images.unsplash.com/photo-1536240478700-b869ad10e128?w=300&q=80' },

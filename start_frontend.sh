@@ -1,5 +1,5 @@
 #!/bin/bash
-# ─── FaceSwap AI — Frontend Startup Script ───────────────────────────────────
+# ─── Fun With AI — Frontend Startup Script ───────────────────────────────────
 set -e
 
 cd "$(dirname "$0")/react-native-frontend"

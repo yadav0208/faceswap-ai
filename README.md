@@ -1,4 +1,4 @@
-# FaceSwap AI 🤖✨
+# Fun With AI 🤖✨
 
 An AI-powered face swap and pose generation mobile app — similar to Look Swap Me.
 Upload your photo, pick a style, and the AI places your face onto any pose.

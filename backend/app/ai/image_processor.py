@@ -21,104 +21,104 @@ logger = logging.getLogger(__name__)
 # ── Target photo URLs keyed by studio_id_pose_id ──────────────────────────────
 POSE_PHOTO_URLS: dict[str, str] = {
     # ── face_swap ────────────────────────────────────────────────────────────
-    "face_swap_photo":       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "face_swap_celeb":       "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "face_swap_movie":       "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&q=90",
-    "face_swap_cartoon":     "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=512&h=768&fit=crop&q=90",
+    "face_swap_photo":       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
+    "face_swap_celeb":       "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "face_swap_movie":       "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
+    "face_swap_cartoon":     "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=512&h=768&fit=crop&crop=faces&q=90",
     # ── ai_portrait ──────────────────────────────────────────────────────────
-    "ai_portrait_studio":    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "ai_portrait_outdoor":   "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "ai_portrait_linkedin":  "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=512&h=768&fit=crop&q=90",
-    "ai_portrait_creative":  "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&q=90",
+    "ai_portrait_studio":    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
+    "ai_portrait_outdoor":   "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "ai_portrait_linkedin":  "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=512&h=768&fit=crop&crop=faces&q=90",
+    "ai_portrait_creative":  "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&crop=faces&q=90",
     # ── photo_styles ─────────────────────────────────────────────────────────
-    "photo_styles_retro_1996":   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "photo_styles_future_2026":  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "photo_styles_film_noir":    "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&q=90",
-    "photo_styles_polaroid":     "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&q=90",
+    "photo_styles_retro_1996":   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
+    "photo_styles_future_2026":  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "photo_styles_film_noir":    "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
+    "photo_styles_polaroid":     "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
     # ── anime_style ──────────────────────────────────────────────────────────
-    "anime_style_manga":         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "anime_style_ghibli":        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "anime_style_chibi":         "https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=512&h=768&fit=crop&q=90",
-    "anime_style_cyberpunk":     "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&q=90",
+    "anime_style_manga":         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
+    "anime_style_ghibli":        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "anime_style_chibi":         "https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=512&h=768&fit=crop&crop=faces&q=90",
+    "anime_style_cyberpunk":     "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
     # ── birthday ─────────────────────────────────────────────────────────────
-    "birthday_bday_queen":       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "birthday_bday_pink":        "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&q=90",
-    "birthday_bday_candles":     "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "birthday_bday_outdoor":     "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&q=90",
+    "birthday_bday_queen":       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
+    "birthday_bday_pink":        "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
+    "birthday_bday_candles":     "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "birthday_bday_outdoor":     "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&crop=faces&q=90",
     # ── stadium_cam ──────────────────────────────────────────────────────────
-    "stadium_cam_football":      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "stadium_cam_concert":       "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&q=90",
-    "stadium_cam_basketball":    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "stadium_cam_fan_zone":      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&q=90",
+    "stadium_cam_football":      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=512&h=768&fit=crop&crop=faces&q=90",
+    "stadium_cam_concert":       "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
+    "stadium_cam_basketball":    "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=512&h=768&fit=crop&crop=faces&q=90",
+    "stadium_cam_fan_zone":      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
     # ── horse_riding (video) ─────────────────────────────────────────────────
-    "horse_riding_snow":         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "horse_riding_beach":        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "horse_riding_forest":       "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&q=90",
-    "horse_riding_meadow":       "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&q=90",
+    "horse_riding_snow":         "https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?w=512&h=768&fit=crop&crop=faces&q=90",
+    "horse_riding_beach":        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "horse_riding_forest":       "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
+    "horse_riding_meadow":       "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&crop=faces&q=90",
     # ── fantasy_armor ────────────────────────────────────────────────────────
-    "fantasy_armor_knight":      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "fantasy_armor_warrior":     "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&q=90",
-    "fantasy_armor_elf":         "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "fantasy_armor_mage":        "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&q=90",
+    "fantasy_armor_knight":      "https://images.unsplash.com/photo-1535666669445-e8c15cd2e7d9?w=512&h=768&fit=crop&crop=faces&q=90",
+    "fantasy_armor_warrior":     "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
+    "fantasy_armor_elf":         "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "fantasy_armor_mage":        "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
     # ── dance_video (video) ──────────────────────────────────────────────────
-    "dance_video_hiphop":        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "dance_video_salsa":         "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "dance_video_kpop":          "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&q=90",
-    "dance_video_viral":         "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&q=90",
+    "dance_video_hiphop":        "https://images.unsplash.com/photo-1547153760-18fc86324498?w=512&h=768&fit=crop&crop=faces&q=90",
+    "dance_video_salsa":         "https://images.unsplash.com/photo-1504609813442-a8924e83f76e?w=512&h=768&fit=crop&crop=faces&q=90",
+    "dance_video_kpop":          "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
+    "dance_video_viral":         "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
     # ── talking_photo (video) ────────────────────────────────────────────────
-    "talking_photo_natural":     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "talking_photo_laugh":       "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&q=90",
-    "talking_photo_sing":        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "talking_photo_wink":        "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&q=90",
+    "talking_photo_natural":     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
+    "talking_photo_laugh":       "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
+    "talking_photo_sing":        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "talking_photo_wink":        "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&crop=faces&q=90",
     # ── retro_1996 / futuristic_2026 ─────────────────────────────────────────
-    "retro_1996_bw":             "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "retro_1996_sepia":          "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&q=90",
-    "retro_1996_vhs":            "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "retro_1996_grunge":         "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&q=90",
-    "futuristic_2026_neon":      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "futuristic_2026_cyber":     "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "futuristic_2026_ai_art":    "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&q=90",
-    "futuristic_2026_glitch":    "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&q=90",
+    "retro_1996_bw":             "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
+    "retro_1996_sepia":          "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
+    "retro_1996_vhs":            "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "retro_1996_grunge":         "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
+    "futuristic_2026_neon":      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
+    "futuristic_2026_cyber":     "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "futuristic_2026_ai_art":    "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "futuristic_2026_glitch":    "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
     # ── wedding / graduation / birthday_queen ────────────────────────────────
-    "wedding_look_bride":        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "wedding_look_groom":        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "wedding_look_couple":       "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&q=90",
-    "wedding_look_aisle":        "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&q=90",
-    "graduation_cap":            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "graduation_outdoor":        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "graduation_party":          "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&q=90",
-    "graduation_formal":         "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&q=90",
-    "birthday_queen_crown":      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "birthday_queen_floral":     "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&q=90",
-    "birthday_queen_glam":       "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "birthday_queen_casual":     "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&q=90",
+    "wedding_look_bride":        "https://images.unsplash.com/photo-1519741497674-611481863552?w=512&h=768&fit=crop&crop=faces&q=90",
+    "wedding_look_groom":        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "wedding_look_couple":       "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
+    "wedding_look_aisle":        "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
+    "graduation_cap":            "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=512&h=768&fit=crop&crop=faces&q=90",
+    "graduation_outdoor":        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "graduation_party":          "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "graduation_formal":         "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
+    "birthday_queen_crown":      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
+    "birthday_queen_floral":     "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
+    "birthday_queen_glam":       "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "birthday_queen_casual":     "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&crop=faces&q=90",
     # ── outfit_tryon ─────────────────────────────────────────────────────────
-    "outfit_tryon_casual":       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "outfit_tryon_formal":       "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=512&h=768&fit=crop&q=90",
-    "outfit_tryon_sport":        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "outfit_tryon_party":        "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&q=90",
+    "outfit_tryon_casual":       "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=512&h=768&fit=crop&crop=faces&q=90",
+    "outfit_tryon_formal":       "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=512&h=768&fit=crop&crop=faces&q=90",
+    "outfit_tryon_sport":        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "outfit_tryon_party":        "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
     # ── age_filter ───────────────────────────────────────────────────────────
-    "age_filter_young":          "https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=512&h=768&fit=crop&q=90",
-    "age_filter_old":            "https://images.unsplash.com/photo-1601576084861-5de423553c0f?w=512&h=768&fit=crop&q=90",
-    "age_filter_teen":           "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=512&h=768&fit=crop&q=90",
-    "age_filter_elder":          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
+    "age_filter_young":          "https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=512&h=768&fit=crop&crop=faces&q=90",
+    "age_filter_old":            "https://images.unsplash.com/photo-1601576084861-5de423553c0f?w=512&h=768&fit=crop&crop=faces&q=90",
+    "age_filter_teen":           "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=512&h=768&fit=crop&crop=faces&q=90",
+    "age_filter_elder":          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
     # ── kids (video) ─────────────────────────────────────────────────────────
-    "kids_cartoon_superhero":    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "kids_cartoon_anime":        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "kids_cartoon_fairy":        "https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=512&h=768&fit=crop&q=90",
-    "kids_superhero_marvel":     "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&q=90",
-    "kids_superhero_dc":         "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&q=90",
-    "kids_fairy_tale_princess":  "https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=512&h=768&fit=crop&q=90",
-    "kids_fairy_tale_knight":    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "kids_space_astronaut":      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "kids_space_alien":          "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&q=90",
-    "kids_dinosaur_trex":        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "kids_underwater_mermaid":   "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&q=90",
+    "kids_cartoon_superhero":    "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=512&h=768&fit=crop&crop=faces&q=90",
+    "kids_cartoon_anime":        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "kids_cartoon_fairy":        "https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=512&h=768&fit=crop&crop=faces&q=90",
+    "kids_superhero_marvel":     "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
+    "kids_superhero_dc":         "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
+    "kids_fairy_tale_princess":  "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=512&h=768&fit=crop&crop=faces&q=90",
+    "kids_fairy_tale_knight":    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
+    "kids_space_astronaut":      "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=512&h=768&fit=crop&q=90",
+    "kids_space_alien":          "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
+    "kids_dinosaur_trex":        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
+    "kids_underwater_mermaid":   "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
     # ── ai_videos (video) ────────────────────────────────────────────────────
-    "ai_videos_collage":         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&q=90",
-    "ai_videos_cinematic":       "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&q=90",
-    "ai_videos_fantasy":         "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&q=90",
-    "ai_videos_dance":           "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&q=90",
+    "ai_videos_collage":         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
+    "ai_videos_cinematic":       "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
+    "ai_videos_fantasy":         "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
+    "ai_videos_dance":           "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
 }
 
 # Studios that produce video output — must match frontend VIDEO_STUDIOS set
@@ -553,16 +553,23 @@ class ImageProcessor:
         return cv2.cvtColor(cv2.merge([l, a, b]), cv2.COLOR_LAB2BGR)
 
     def _resize_canvas(self, img: np.ndarray, w: int, h: int) -> np.ndarray:
-        """Resize image to fit w×h keeping aspect ratio, black-pad remainder."""
+        """
+        Resize image to fill w×h (cover mode) — no black bars.
+        Scales to fill the target dimensions, cropping excess from center.
+        """
         ih, iw = img.shape[:2]
-        scale = min(w / iw, h / ih)
+        # Cover: scale so image fills the whole canvas (may crop sides or top/bottom)
+        scale = max(w / iw, h / ih)
         nw, nh = int(iw * scale), int(ih * scale)
         resized = cv2.resize(img, (nw, nh), interpolation=cv2.INTER_LANCZOS4)
-        canvas = np.zeros((h, w, 3), dtype=np.uint8)
-        y0 = (h - nh) // 2
-        x0 = (w - nw) // 2
-        canvas[y0:y0+nh, x0:x0+nw] = resized
-        return canvas
+        # Center-crop to exact target size
+        y0 = (nh - h) // 2
+        x0 = (nw - w) // 2
+        cropped = resized[y0:y0 + h, x0:x0 + w]
+        # Ensure exact dimensions (rounding safety)
+        if cropped.shape[0] != h or cropped.shape[1] != w:
+            cropped = cv2.resize(cropped, (w, h), interpolation=cv2.INTER_LANCZOS4)
+        return cropped
 
     def _save(self, img: np.ndarray, output_path: str) -> None:
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)

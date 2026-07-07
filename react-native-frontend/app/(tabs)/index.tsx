@@ -81,7 +81,7 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.appName}>AI Catch ✦</Text>
+            <Text style={styles.appName}>Fun With AI ✦</Text>
             <Text style={styles.tagline}>AI Video Maker & Photo Generator</Text>
           </View>
           <View style={styles.headerRight}>

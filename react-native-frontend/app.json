@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "AI Catch",
-    "slug": "faceswap-ai",
+    "name": "Fun With AI",
+    "slug": "fun-with-ai",
     "version": "1.0.0",
     "orientation": "portrait",
     "updates": {
@@ -45,14 +45,14 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow FaceSwap AI to access your photos.",
-          "cameraPermission": "Allow FaceSwap AI to use the camera."
+          "photosPermission": "Allow Fun With AI to access your photos.",
+          "cameraPermission": "Allow Fun With AI to use the camera."
         }
       ],
       [
         "expo-media-library",
         {
-          "photosPermission": "Allow FaceSwap AI to save photos."
+          "photosPermission": "Allow Fun With AI to save photos."
         }
       ]
     ],

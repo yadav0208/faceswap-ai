@@ -1,10 +1,10 @@
 #!/bin/bash
-# ─── FaceSwap AI — Backend Startup Script ────────────────────────────────────
+# ─── Fun With AI — Backend Startup Script ────────────────────────────────────
 set -e
 
 cd "$(dirname "$0")/backend"
 
-echo "🤖 Setting up FaceSwap AI backend..."
+echo "🤖 Setting up Fun With AI backend..."
 
 # Create virtual environment if needed
 if [ ! -d "venv" ]; then

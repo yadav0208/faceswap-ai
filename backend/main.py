@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    logger.info("Starting FaceSwap AI backend...")
+    logger.info("Starting Fun With AI backend...")
 
     # Create required directories
     for d in [settings.UPLOAD_DIR, settings.OUTPUT_DIR, settings.POSE_TEMPLATES_DIR]:
@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="FaceSwap AI API",
+    title="Fun With AI API",
     description="AI-powered face swap and pose generation",
     version="1.0.0",
     lifespan=lifespan,

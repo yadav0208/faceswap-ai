@@ -1,13 +1,13 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────
-#   FaceSwap AI — One-command launcher
+#   Fun With AI — One-command launcher
 # ─────────────────────────────────────────────────────
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 
 echo ""
 echo "╔═══════════════════════════════════════╗"
-echo "║        FaceSwap AI Launcher           ║"
+echo "║        Fun With AI Launcher           ║"
 echo "╚═══════════════════════════════════════╝"
 echo ""
 

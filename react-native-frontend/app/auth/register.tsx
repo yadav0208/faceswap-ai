@@ -69,7 +69,7 @@ export default function RegisterScreen() {
             <Ionicons name="sparkles" size={28} color="#fff" />
           </LinearGradient>
           <Text style={styles.title}>Create account</Text>
-          <Text style={styles.subtitle}>Join FaceSwap AI today</Text>
+          <Text style={styles.subtitle}>Join Fun With AI today</Text>
 
           {fields.map((f) => (
             <View key={f.key} style={styles.inputWrap}>

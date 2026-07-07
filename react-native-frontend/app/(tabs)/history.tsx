@@ -10,7 +10,7 @@ import { Colors, Radius } from '../../constants/theme';
 
 const FILTER_TABS = ['All', 'Videos', 'Photos', 'Occasions'];
 
-// Demo creations matching AI Catch content
+// Demo creations matching Fun With AI content
 const DEMO_HISTORY = [
   {
     id: '1', type: 'video', tool: 'Horse Riding Video', date: '2 hours ago',

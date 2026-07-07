@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { Colors, Radius } from '../../constants/theme';
 import { STUDIOS } from '../../constants/studios';
 
-// AI Catch quick-action shortcuts
+// Fun With AI quick-action shortcuts
 const QUICK_ACTIONS = [
   { label: 'AI Videos',     icon: 'film',              id: 'ai_videos',    color: '#22C55E' },
   { label: 'Face Swap',     icon: 'swap-horizontal',   id: 'face_swap',    color: '#DB2777' },

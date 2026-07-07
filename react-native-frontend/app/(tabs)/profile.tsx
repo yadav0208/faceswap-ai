@@ -144,7 +144,7 @@ export default function ProfileScreen() {
             );
           })}
 
-          <Text style={styles.version}>AI Catch · v1.0.0</Text>
+          <Text style={styles.version}>Fun With AI · v1.0.0</Text>
         </ScrollView>
       </SafeAreaView>
     </View>
