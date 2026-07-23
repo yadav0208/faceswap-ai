@@ -13,8 +13,13 @@ import { BlurView } from 'expo-blur';
 import { Colors, Radius } from '../../constants/theme';
 import { STUDIOS } from '../../constants/studios';
 
+// Gold accent constants
+const GOLD = Colors.brand.gold;
+const GOLD_LIGHT = Colors.brand.goldLight;
+const GOLD_DARK = Colors.brand.goldDark;
+
 const { width: SW } = Dimensions.get('window');
-const API = 'http://10.170.167.22:8000';
+const API = 'http://10.99.217.247:8000';
 
 // Style options per tool — matches Fun With AI content
 const STYLES: Record<string, { id: string; label: string; imageUrl: string }[]> = {
@@ -266,7 +271,7 @@ export default function StudioScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={{ paddingBottom: 130 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: 130 }]} showsVerticalScrollIndicator={false}>
 
         {/* Text prompt (text2video) */}
         {needsText && (
@@ -307,15 +312,15 @@ export default function StudioScreen() {
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity onPress={pickPhoto} style={styles.uploadBox}>
-                  <LinearGradient colors={['rgba(124,58,237,0.12)', 'rgba(124,58,237,0.04)']} style={StyleSheet.absoluteFill} />
-                  <Ionicons name="image-outline" size={30} color={Colors.brand.purpleLight} />
+                  <LinearGradient colors={['rgba(201,168,76,0.12)', 'rgba(201,168,76,0.04)']} style={StyleSheet.absoluteFill} />
+                  <Ionicons name="image-outline" size={30} color={Colors.brand.gold} />
                   <Text style={styles.uploadTitle}>Choose Photo</Text>
                   <Text style={styles.uploadHint}>From library</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity onPress={takePhoto} style={styles.cameraBox}>
-                <LinearGradient colors={['rgba(124,58,237,0.12)', 'rgba(124,58,237,0.04)']} style={StyleSheet.absoluteFill} />
-                <Ionicons name="camera-outline" size={30} color={Colors.brand.purpleLight} />
+                <LinearGradient colors={['rgba(201,168,76,0.12)', 'rgba(201,168,76,0.04)']} style={StyleSheet.absoluteFill} />
+                <Ionicons name="camera-outline" size={30} color={Colors.brand.gold} />
                 <Text style={styles.uploadTitle}>Camera</Text>
                 <Text style={styles.uploadHint}>Take a selfie</Text>
               </TouchableOpacity>
@@ -341,7 +346,7 @@ export default function StudioScreen() {
                     <LinearGradient colors={['transparent', 'rgba(0,0,0,0.78)']} style={StyleSheet.absoluteFill} />
                     {sel && (
                       <LinearGradient
-                        colors={[Colors.brand.purple, Colors.brand.purpleLight]}
+                        colors={[GOLD_DARK, GOLD]}
                         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                         style={[StyleSheet.absoluteFill, { opacity: 0.22 }]}
                       />
@@ -392,11 +397,11 @@ export default function StudioScreen() {
           <BlurView tint="dark" intensity={85} style={StyleSheet.absoluteFill} />
           {generating ? (
             <View style={styles.generatingRow}>
-              <ActivityIndicator color={Colors.brand.purple} size="small" />
+              <ActivityIndicator color={GOLD} size="small" />
               <Text style={styles.generatingText}>Generating… {Math.round(progress)}%</Text>
               <View style={styles.progressBar}>
                 <LinearGradient
-                  colors={[Colors.brand.purple, Colors.brand.purpleLight]}
+                  colors={[GOLD_DARK, GOLD]}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                   style={[styles.progressFill, { width: `${progress}%` }]}
                 />
@@ -410,13 +415,13 @@ export default function StudioScreen() {
             >
               <LinearGradient
                 colors={canGenerate
-                  ? [Colors.brand.purple, Colors.brand.purpleLight]
-                  : ['rgba(124,58,237,0.3)', 'rgba(155,92,246,0.3)']}
+                  ? [GOLD_DARK, GOLD, GOLD_LIGHT]
+                  : ['rgba(201,168,76,0.3)', 'rgba(201,168,76,0.2)']}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={StyleSheet.absoluteFill}
               />
-              <Ionicons name="sparkles" size={20} color="#fff" />
-              <Text style={styles.ctaLabel}>Generate Now</Text>
+              <Ionicons name="sparkles" size={20} color="#000" />
+              <Text style={[styles.ctaLabel, { color: '#000' }]}>Generate Now</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -449,7 +454,8 @@ const styles = StyleSheet.create({
   },
   heroTitle: { fontSize: 26, fontWeight: '700', color: '#fff' },
   heroSub: { fontSize: 13, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
-  scroll: { flex: 1, paddingHorizontal: 16, paddingTop: 20 },
+  scroll: { flex: 1 },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 20 },
   sectionLabel: {
     fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.5)',
     textTransform: 'uppercase', letterSpacing: 0.8,
@@ -467,13 +473,13 @@ const styles = StyleSheet.create({
     flex: 1, height: 126, borderRadius: Radius.md,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 1.5, borderStyle: 'dashed',
-    borderColor: 'rgba(124,58,237,0.4)', overflow: 'hidden', gap: 5,
+    borderColor: 'rgba(201,168,76,0.4)', overflow: 'hidden', gap: 5,
   },
   cameraBox: {
     flex: 1, height: 126, borderRadius: Radius.md,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 1.5, borderStyle: 'dashed',
-    borderColor: 'rgba(124,58,237,0.4)', overflow: 'hidden', gap: 5,
+    borderColor: 'rgba(201,168,76,0.4)', overflow: 'hidden', gap: 5,
   },
   uploadTitle: { fontSize: 13, fontWeight: '600', color: '#fff' },
   uploadHint: { fontSize: 11, color: 'rgba(255,255,255,0.38)' },
@@ -491,13 +497,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden', borderWidth: 2, borderColor: 'transparent',
     justifyContent: 'flex-end',
   },
-  styleCardSel: { borderColor: Colors.brand.purple },
+  styleCardSel: { borderColor: GOLD },
   styleImg: { ...StyleSheet.absoluteFillObject } as any,
   styleLabel: { fontSize: 12, fontWeight: '600', color: '#fff', padding: 8, paddingBottom: 10 },
   styleCheck: {
     position: 'absolute', top: 8, right: 8,
     width: 20, height: 20, borderRadius: 10,
-    backgroundColor: Colors.brand.purple,
+    backgroundColor: GOLD,
     alignItems: 'center', justifyContent: 'center',
   },
   resultSection: { marginTop: 22 },
@@ -514,7 +520,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.15)',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
   },
-  resultBtnPrimary: { flex: 1.2, backgroundColor: Colors.brand.purple, borderColor: 'transparent' },
+  resultBtnPrimary: { flex: 1.2, backgroundColor: GOLD, borderColor: 'transparent' },
   resultBtnText: { fontSize: 12, fontWeight: '600', color: '#fff' },
   ctaContainer: {
     position: 'absolute', bottom: 0, left: 0, right: 0,

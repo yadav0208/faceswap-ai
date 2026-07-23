@@ -22,7 +22,7 @@ export default function RegisterScreen() {
     }
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/auth/register', {
+      const res = await fetch('http://10.99.217.247:8000/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -63,13 +63,14 @@ export default function RegisterScreen() {
         </TouchableOpacity>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <LinearGradient
-            colors={[Colors.brand.purple, Colors.brand.purpleLight]}
+            colors={[Colors.brand.goldDark, Colors.brand.gold]}
             style={styles.logo}
           >
-            <Ionicons name="sparkles" size={28} color="#fff" />
+            <Ionicons name="sparkles" size={28} color="#000" />
           </LinearGradient>
+          <Text style={styles.brandLabel}>ANVA AI</Text>
           <Text style={styles.title}>Create account</Text>
-          <Text style={styles.subtitle}>Join Fun With AI today</Text>
+          <Text style={styles.subtitle}>Join Anva AI today</Text>
 
           {fields.map((f) => (
             <View key={f.key} style={styles.inputWrap}>
@@ -80,7 +81,9 @@ export default function RegisterScreen() {
                 placeholder={f.placeholder}
                 placeholderTextColor="rgba(255,255,255,0.3)"
                 secureTextEntry={f.secure && !showPass}
-                autoCapitalize={f.key === 'email' ? 'none' : f.key === 'username' ? 'none' : 'words'}
+                autoCapitalize={
+                  f.key === 'email' ? 'none' : f.key === 'username' ? 'none' : 'words'
+                }
                 keyboardType={f.key === 'email' ? 'email-address' : 'default'}
                 style={styles.input}
               />
@@ -98,21 +101,25 @@ export default function RegisterScreen() {
 
           <TouchableOpacity onPress={handleRegister} style={styles.btn} activeOpacity={0.85}>
             <LinearGradient
-              colors={[Colors.brand.purple, Colors.brand.purpleLight]}
+              colors={[Colors.brand.goldDark, Colors.brand.gold, Colors.brand.goldLight]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={StyleSheet.absoluteFill}
             />
             {loading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color="#000" />
             ) : (
               <Text style={styles.btnText}>Create Account</Text>
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => router.push('/auth/login')} style={styles.loginLink}>
+          <TouchableOpacity
+            onPress={() => router.push('/auth/login')}
+            style={styles.loginLink}
+          >
             <Text style={styles.loginText}>
-              Already have an account? <Text style={styles.loginBold}>Sign in</Text>
+              Already have an account?{' '}
+              <Text style={styles.loginBold}>Sign in</Text>
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -129,10 +136,17 @@ const styles = StyleSheet.create({
   logo: {
     width: 64, height: 64, borderRadius: 20,
     alignItems: 'center', justifyContent: 'center',
-    marginBottom: 8, alignSelf: 'center',
+    marginBottom: 4, alignSelf: 'center',
+  },
+  brandLabel: {
+    fontSize: 11, fontWeight: '800', letterSpacing: 2.5,
+    color: Colors.brand.gold, textAlign: 'center', marginBottom: 4,
   },
   title: { fontSize: 28, fontWeight: '700', color: '#fff', textAlign: 'center' },
-  subtitle: { fontSize: 15, color: 'rgba(255,255,255,0.45)', textAlign: 'center', marginBottom: 16 },
+  subtitle: {
+    fontSize: 15, color: 'rgba(255,255,255,0.45)',
+    textAlign: 'center', marginBottom: 16,
+  },
   inputWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: Colors.bg.card,
@@ -145,8 +159,8 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     overflow: 'hidden', marginTop: 8,
   },
-  btnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  btnText: { fontSize: 16, fontWeight: '800', color: '#000' },
   loginLink: { alignItems: 'center', marginTop: 8 },
   loginText: { fontSize: 14, color: 'rgba(255,255,255,0.45)' },
-  loginBold: { color: Colors.brand.purpleLight, fontWeight: '600' },
+  loginBold: { color: Colors.brand.gold, fontWeight: '600' },
 });

@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
 from fastapi.responses import FileResponse
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Optional
 from app.database import get_db, engine
@@ -18,8 +18,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/generate", tags=["generate"])
-
-ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp", "application/octet-stream"}
 
 
 def _gen_to_schema(g: Generation) -> GenerationOut:
@@ -38,13 +36,8 @@ def _gen_to_schema(g: Generation) -> GenerationOut:
     )
 
 
-async def _run_generation(
-    generation_id: int,
-    studio_id: str,
-    pose_id: str,
-):
-    """Background task: opens its OWN DB session (avoids closed-session bug)."""
-    from app.database import engine
+async def _run_generation(generation_id: int, studio_id: str, pose_id: str):
+    """Background task with its own DB session."""
     from sqlalchemy.ext.asyncio import async_sessionmaker
     AsyncSession_local = async_sessionmaker(engine, expire_on_commit=False)
 
@@ -67,11 +60,13 @@ async def _run_generation(
         gen.status = "processing"
         await db.commit()
 
-        # Output extension depends on studio — video studios get .mp4
         is_video = studio_id in VIDEO_STUDIOS
         ext = ".mp4" if is_video else ".jpg"
         output_filename = f"result_{generation_id}_{uuid.uuid4().hex[:8]}{ext}"
         output_path = os.path.join(settings.OUTPUT_DIR, output_filename)
+
+        # Prompt-only path — no source image
+        is_prompt_only = gen.source_image_path == "prompt_only"
 
         success, error = await image_processor.generate(
             source_image_path=gen.source_image_path,
@@ -83,7 +78,7 @@ async def _run_generation(
             pose_id=pose_id,
         )
 
-        # If video failed and a fallback JPEG was written instead, use it
+        # Video fallback: if mp4 not written, check for _frame.jpg
         if not success and is_video:
             jpg_fallback = output_path.replace(".mp4", "_frame.jpg")
             if os.path.exists(jpg_fallback):
@@ -92,6 +87,11 @@ async def _run_generation(
                 error = None
 
         if success:
+            # For video: prefer mp4, but accept jpg fallback
+            if is_video and not os.path.exists(output_path):
+                jpg_path = output_path.replace(".mp4", "_frame.jpg")
+                if os.path.exists(jpg_path):
+                    output_path = jpg_path
             gen.status = "completed"
             gen.result_image_path = output_path
             gen.completed_at = datetime.utcnow()
@@ -104,55 +104,44 @@ async def _run_generation(
         await db.commit()
 
 
+# ── Standard generation (requires image upload) ───────────────────────────────
 @router.post("", response_model=GenerationOut, status_code=202)
 async def create_generation(
     background_tasks: BackgroundTasks,
     pose_template_id: int = Form(...),
-    studio_id: str = Form(""),        # e.g. "fitness"
-    pose_id: str = Form(""),          # e.g. "gym_power"
+    studio_id: str = Form(""),
+    pose_id: str = Form(""),
     gender: str = Form("auto"),
     style_prompt: Optional[str] = Form(None),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user),
 ):
-    # Accept any image content type (phones sometimes send octet-stream)
     ct = file.content_type or ""
     if not (ct.startswith("image/") or ct == "application/octet-stream"):
-        raise HTTPException(400, detail=f"Unsupported file type: {ct}. Please upload a JPEG or PNG.")
+        raise HTTPException(400, detail=f"Unsupported file type: {ct}. Upload a JPEG or PNG.")
 
     content = await file.read()
     if len(content) > settings.MAX_UPLOAD_SIZE:
-        raise HTTPException(413, detail="File too large (max 10MB)")
+        raise HTTPException(413, detail="File too large (max 10 MB)")
 
-    # Save upload
     Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
-    upload_filename = f"upload_{uuid.uuid4().hex}.jpg"
-    upload_path = os.path.join(settings.UPLOAD_DIR, upload_filename)
+    upload_path = os.path.join(settings.UPLOAD_DIR, f"upload_{uuid.uuid4().hex}.jpg")
     with open(upload_path, "wb") as f:
         f.write(content)
 
-    # Face detection
     detection = face_detector.detect(upload_path)
     if not detection.get("detected"):
         os.remove(upload_path)
         raise HTTPException(
             422,
-            detail="No face detected in the uploaded image. Please upload a clear, front-facing photo."
+            detail="No face detected. Please upload a clear, front-facing photo.",
         )
 
-    # Pose template lookup — use id=1 as fallback if not found
-    result = await db.execute(
-        select(PoseTemplate).where(PoseTemplate.id == pose_template_id)
-    )
-    template = result.scalar_one_or_none()
-    if not template:
-        # fallback to first template
-        result = await db.execute(select(PoseTemplate).limit(1))
-        template = result.scalar_one_or_none()
+    template = await _get_template(db, pose_template_id)
     if not template:
         os.remove(upload_path)
-        raise HTTPException(404, detail="No pose templates found. Please restart the server.")
+        raise HTTPException(404, detail="No pose templates found. Restart the server.")
 
     gen = Generation(
         user_id=current_user.id if current_user else None,
@@ -166,12 +155,53 @@ async def create_generation(
     db.add(gen)
     await db.commit()
     await db.refresh(gen)
-
     background_tasks.add_task(_run_generation, gen.id, studio_id, pose_id)
-
     return _gen_to_schema(gen)
 
 
+# ── Prompt-only generation (Custom Generator — no file needed) ────────────────
+@router.post("/prompt", response_model=GenerationOut, status_code=202)
+async def create_prompt_generation(
+    background_tasks: BackgroundTasks,
+    prompt: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user),
+):
+    """Generate an image from a text prompt — no photo upload required."""
+    if not prompt.strip():
+        raise HTTPException(400, detail="Prompt cannot be empty.")
+
+    template = await _get_template(db, 1)
+    if not template:
+        raise HTTPException(404, detail="No templates found. Restart the server.")
+
+    gen = Generation(
+        user_id=current_user.id if current_user else None,
+        pose_template_id=template.id,
+        source_image_path="prompt_only",   # sentinel value
+        gender="auto",
+        style_prompt=prompt.strip(),
+        status="pending",
+        confidence_score=None,
+    )
+    db.add(gen)
+    await db.commit()
+    await db.refresh(gen)
+    background_tasks.add_task(_run_generation, gen.id, "custom_generator", "default")
+    return _gen_to_schema(gen)
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+async def _get_template(db: AsyncSession, template_id: int) -> Optional[PoseTemplate]:
+    result = await db.execute(select(PoseTemplate).where(PoseTemplate.id == template_id))
+    t = result.scalar_one_or_none()
+    if not t:
+        result = await db.execute(select(PoseTemplate).limit(1))
+        t = result.scalar_one_or_none()
+    return t
+
+
+# ── Status / result endpoints ─────────────────────────────────────────────────
 @router.get("/history", response_model=list[GenerationOut])
 async def get_history(
     db: AsyncSession = Depends(get_db),
@@ -194,9 +224,7 @@ async def get_status(generation_id: int, db: AsyncSession = Depends(get_db)):
     gen = result.scalar_one_or_none()
     if not gen:
         raise HTTPException(404, detail="Generation not found")
-
-    progress = {"pending": 5, "processing": 60, "completed": 100, "failed": 0}.get(gen.status, 0)
-
+    progress = {"pending": 10, "processing": 65, "completed": 100, "failed": 0}.get(gen.status, 0)
     return GenerationStatus(
         id=gen.id,
         status=gen.status,
@@ -214,13 +242,17 @@ async def get_result_image(generation_id: int, db: AsyncSession = Depends(get_db
         raise HTTPException(404, detail="Result not available yet")
     if not os.path.exists(gen.result_image_path):
         raise HTTPException(404, detail="Result file not found on disk")
-    return FileResponse(gen.result_image_path, media_type="image/jpeg")
+    # Serve mp4 as video, otherwise jpeg
+    media_type = "video/mp4" if gen.result_image_path.endswith(".mp4") else "image/jpeg"
+    return FileResponse(gen.result_image_path, media_type=media_type)
 
 
 @router.get("/{generation_id}/source")
 async def get_source_image(generation_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Generation).where(Generation.id == generation_id))
     gen = result.scalar_one_or_none()
-    if not gen or not os.path.exists(gen.source_image_path):
+    if not gen or gen.source_image_path == "prompt_only":
+        raise HTTPException(404, detail="No source image for this generation")
+    if not os.path.exists(gen.source_image_path):
         raise HTTPException(404, detail="Source not found")
     return FileResponse(gen.source_image_path, media_type="image/jpeg")

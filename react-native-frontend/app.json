@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Fun With AI",
-    "slug": "fun-with-ai",
+    "name": "Anva AI",
+    "slug": "anva-ai",
     "version": "1.0.0",
     "orientation": "portrait",
     "updates": {
@@ -12,27 +12,27 @@
     },
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "scheme": "faceswapai",
+    "scheme": "anvaai",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0D0D14"
+      "backgroundColor": "#0A0A0A"
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.faceswapai.app",
+      "bundleIdentifier": "com.anvaai.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "Take a photo for face swap",
-        "NSPhotoLibraryUsageDescription": "Select a photo for face swap",
+        "NSCameraUsageDescription": "Take a photo for AI generation",
+        "NSPhotoLibraryUsageDescription": "Select a photo for AI generation",
         "NSPhotoLibraryAddUsageDescription": "Save your generated looks"
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0D0D14"
+        "backgroundColor": "#0A0A0A"
       },
-      "package": "com.faceswapai.app",
+      "package": "com.anvaai.app",
       "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"]
     },
     "web": {
@@ -45,14 +45,14 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Fun With AI to access your photos.",
-          "cameraPermission": "Allow Fun With AI to use the camera."
+          "photosPermission": "Allow Anva AI to access your photos.",
+          "cameraPermission": "Allow Anva AI to use the camera."
         }
       ],
       [
         "expo-media-library",
         {
-          "photosPermission": "Allow Fun With AI to save photos."
+          "photosPermission": "Allow Anva AI to save photos."
         }
       ]
     ],

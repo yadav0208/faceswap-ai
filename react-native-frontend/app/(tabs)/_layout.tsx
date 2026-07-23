@@ -10,28 +10,32 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Colors, Radius } from '../../constants/theme';
+import { Colors } from '../../constants/theme';
 
 function TabBarIcon({
   name,
   focused,
+  label,
 }: {
   name: keyof typeof Ionicons.glyphMap;
   focused: boolean;
+  label: string;
 }) {
   return (
     <View style={styles.iconWrap}>
       <Ionicons
         name={name}
         size={22}
-        color={focused ? '#FFFFFF' : 'rgba(255,255,255,0.35)'}
+        color={focused ? Colors.brand.gold : 'rgba(255,255,255,0.35)'}
       />
-      {focused && <View style={styles.dot} />}
+      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>
+        {label}
+      </Text>
     </View>
   );
 }
 
-// Floating + button in the center of the tab bar
+// Gold floating + button in the center
 function FloatingButton() {
   const router = useRouter();
   return (
@@ -40,10 +44,16 @@ function FloatingButton() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         router.push('/create');
       }}
-      style={styles.fabButton}
+      style={styles.fabOuter}
       activeOpacity={0.85}
     >
-      <Ionicons name="add" size={28} color="#fff" />
+      {/* Gold ring */}
+      <View style={styles.fabRing}>
+        <View style={styles.fabInner}>
+          <Ionicons name="add" size={26} color="#fff" />
+        </View>
+      </View>
+      <Text style={styles.fabLabel}>Create</Text>
     </TouchableOpacity>
   );
 }
@@ -57,38 +67,43 @@ export default function TabLayout() {
         tabBarBackground: () => (
           <BlurView
             tint="dark"
-            intensity={90}
+            intensity={95}
             style={[
               StyleSheet.absoluteFill,
-              { backgroundColor: 'rgba(13,13,20,0.92)', borderTopWidth: 0 },
+              { backgroundColor: 'rgba(10,10,10,0.96)', borderTopWidth: 0 },
             ]}
           />
         ),
-        tabBarActiveTintColor: '#fff',
+        tabBarShowLabel: false, // we render labels manually
+        tabBarActiveTintColor: Colors.brand.gold,
         tabBarInactiveTintColor: 'rgba(255,255,255,0.35)',
-        tabBarLabelStyle: styles.label,
-        tabBarShowLabel: true,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon name={focused ? 'home' : 'home-outline'} focused={focused} />
+            <TabBarIcon
+              name={focused ? 'sparkles' : 'sparkles-outline'}
+              focused={focused}
+              label="Studio"
+            />
           ),
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Explore',
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon name={focused ? 'compass' : 'compass-outline'} focused={focused} />
+            <TabBarIcon
+              name={focused ? 'compass' : 'compass-outline'}
+              focused={focused}
+              label="Explore"
+            />
           ),
         }}
       />
-      {/* Spacer for FAB */}
+      {/* Floating Create button */}
       <Tabs.Screen
         name="create"
         options={{
@@ -99,18 +114,24 @@ export default function TabLayout() {
       <Tabs.Screen
         name="history"
         options={{
-          title: 'My Looks',
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon name={focused ? 'images' : 'images-outline'} focused={focused} />
+            <TabBarIcon
+              name={focused ? 'archive' : 'archive-outline'}
+              focused={focused}
+              label="My Studio"
+            />
           ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon name={focused ? 'person' : 'person-outline'} focused={focused} />
+            <TabBarIcon
+              name={focused ? 'person' : 'person-outline'}
+              focused={focused}
+              label="Profile"
+            />
           ),
         }}
       />
@@ -125,39 +146,61 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     borderTopWidth: 0,
-    height: Platform.OS === 'ios' ? 82 : 62,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 6,
-    paddingTop: 6,
+    height: Platform.OS === 'ios' ? 84 : 64,
+    paddingBottom: Platform.OS === 'ios' ? 26 : 6,
+    paddingTop: 4,
     backgroundColor: 'transparent',
     elevation: 0,
-  },
-  label: {
-    fontSize: 10,
-    fontWeight: '500',
-    marginTop: -2,
   },
   iconWrap: {
     alignItems: 'center',
     gap: 3,
+    paddingTop: 4,
   },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.brand.purple,
+  tabLabel: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.35)',
+    marginTop: 1,
   },
-  fabButton: {
+  tabLabelActive: {
+    color: Colors.brand.gold,
+    fontWeight: '700',
+  },
+  // Floating Create
+  fabOuter: {
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 0,
+    width: 70,
+  },
+  fabRing: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: Colors.brand.purple,
+    borderWidth: 2,
+    borderColor: Colors.brand.gold,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -18,
-    shadowColor: Colors.brand.purple,
+    marginTop: -20,
+    shadowColor: Colors.brand.gold,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
     elevation: 10,
+  },
+  fabInner: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.brand.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fabLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.brand.gold,
+    marginTop: 3,
   },
 });

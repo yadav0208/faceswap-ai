@@ -9,7 +9,7 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Colors, Radius } from '../../constants/theme';
-import { STUDIOS, Studio } from '../../constants/studios';
+import { STUDIOS } from '../../constants/studios';
 
 const CATEGORIES = ['All', 'Trending', 'AI Video', 'AI Photo', 'Occasions', 'Face Swap'];
 
@@ -34,8 +34,7 @@ export default function ExploreScreen() {
 
   const filtered = STUDIOS.filter((s) => {
     const catMatch =
-      activeCategory === 'All' ||
-      CATEGORY_MAP[s.category] === activeCategory;
+      activeCategory === 'All' || CATEGORY_MAP[s.category] === activeCategory;
     const searchMatch =
       !search ||
       s.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -44,15 +43,18 @@ export default function ExploreScreen() {
   });
 
   const badgeColor = (b?: string) =>
-    b === 'HOT' ? '#EF4444' : b === 'NEW' ? '#22C55E' : b === 'TRENDING' ? '#F59E0B' : '#7C3AED';
+    b === 'HOT' ? '#EF4444' : b === 'NEW' ? '#22C55E' : b === 'TRENDING' ? Colors.brand.gold : Colors.brand.gold;
 
   return (
     <View style={styles.root}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
+      <SafeAreaView edges={['top']} style={styles.safe}>
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Explore</Text>
+          <View>
+            <Text style={styles.brandLabel}>ANVA AI</Text>
+            <Text style={styles.title}>Explore</Text>
+          </View>
           <TouchableOpacity style={styles.filterBtn}>
             <Ionicons name="options-outline" size={20} color="#fff" />
           </TouchableOpacity>
@@ -64,7 +66,8 @@ export default function ExploreScreen() {
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder="Search AI tools & effects..."            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholder="Search AI tools & effects…"
+            placeholderTextColor="rgba(255,255,255,0.3)"
             style={styles.searchInput}
           />
           {search.length > 0 && (
@@ -91,7 +94,7 @@ export default function ExploreScreen() {
               >
                 {active && (
                   <LinearGradient
-                    colors={[Colors.brand.purple, Colors.brand.purpleLight]}
+                    colors={[Colors.brand.goldDark, Colors.brand.gold]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                     style={StyleSheet.absoluteFill}
                   />
@@ -141,7 +144,15 @@ export default function ExploreScreen() {
                   <Ionicons name={studio.icon as any} size={14} color="#fff" />
                 </View>
                 {(studio.badge || studio.isPremium) && (
-                  <View style={[styles.badgePill, { backgroundColor: studio.isPremium && !studio.badge ? '#F59E0B' : badgeColor(studio.badge) }]}>
+                  <View style={[
+                    styles.badgePill,
+                    {
+                      backgroundColor:
+                        studio.isPremium && !studio.badge
+                          ? Colors.brand.gold
+                          : badgeColor(studio.badge),
+                    },
+                  ]}>
                     <Text style={styles.badgeText}>{studio.badge ?? 'PRO'}</Text>
                   </View>
                 )}
@@ -160,21 +171,26 @@ export default function ExploreScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.bg.primary },
-  safeArea: { flex: 1 },
+  safe: { flex: 1 },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12,
+    flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingTop: 6, paddingBottom: 14,
   },
-  title: { fontSize: 26, fontWeight: '700', color: '#fff' },
+  brandLabel: {
+    fontSize: 10, fontWeight: '700', letterSpacing: 2.5,
+    color: Colors.brand.gold, marginBottom: 2,
+  },
+  title: { fontSize: 30, fontWeight: '800', color: '#fff', letterSpacing: -0.5 },
   filterBtn: {
     width: 38, height: 38, borderRadius: 19,
     backgroundColor: 'rgba(255,255,255,0.07)',
     alignItems: 'center', justifyContent: 'center',
+    marginTop: 20,
   },
   searchWrap: {
     flexDirection: 'row', alignItems: 'center',
     marginHorizontal: 16, marginBottom: 14, gap: 10,
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: Colors.bg.card,
     borderRadius: Radius.full, paddingHorizontal: 14, paddingVertical: 11,
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
   },
@@ -183,13 +199,12 @@ const styles = StyleSheet.create({
   catPill: {
     paddingHorizontal: 18, paddingVertical: 9,
     borderRadius: Radius.full,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.09)',
-    overflow: 'hidden',
+    backgroundColor: Colors.bg.card,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.09)', overflow: 'hidden',
   },
   catPillActive: { borderColor: 'transparent' },
   catText: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.5)' },
-  catTextActive: { color: '#fff' },
+  catTextActive: { color: '#000', fontWeight: '700' },
   grid: { paddingTop: 6 },
   twoCol: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   card: { borderRadius: Radius.lg, overflow: 'hidden', backgroundColor: Colors.bg.card },

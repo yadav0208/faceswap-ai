@@ -30,7 +30,7 @@ export default function LoginScreen() {
     }
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/auth/login', {
+      const res = await fetch('http://10.99.217.247:8000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -54,7 +54,6 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <SafeAreaView edges={['top', 'bottom']} style={styles.safe}>
-        {/* Close */}
         <TouchableOpacity style={styles.close} onPress={() => router.back()}>
           <Ionicons name="close" size={24} color="rgba(255,255,255,0.6)" />
         </TouchableOpacity>
@@ -62,12 +61,13 @@ export default function LoginScreen() {
         <View style={styles.content}>
           {/* Logo */}
           <LinearGradient
-            colors={[Colors.brand.purple, Colors.brand.purpleLight]}
+            colors={[Colors.brand.goldDark, Colors.brand.gold]}
             style={styles.logo}
           >
-            <Ionicons name="sparkles" size={28} color="#fff" />
+            <Ionicons name="sparkles" size={28} color="#000" />
           </LinearGradient>
 
+          <Text style={styles.brandLabel}>ANVA AI</Text>
           <Text style={styles.title}>Welcome back</Text>
           <Text style={styles.subtitle}>Sign in to your account</Text>
 
@@ -111,20 +111,23 @@ export default function LoginScreen() {
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={[Colors.brand.purple, Colors.brand.purpleLight]}
+              colors={[Colors.brand.goldDark, Colors.brand.gold, Colors.brand.goldLight]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={StyleSheet.absoluteFill}
             />
             {loading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color="#000" />
             ) : (
               <Text style={styles.loginBtnText}>Sign In</Text>
             )}
           </TouchableOpacity>
 
           {/* Register link */}
-          <TouchableOpacity onPress={() => router.push('/auth/register')} style={styles.registerLink}>
+          <TouchableOpacity
+            onPress={() => router.push('/auth/register')}
+            style={styles.registerLink}
+          >
             <Text style={styles.registerText}>
               Don't have an account?{' '}
               <Text style={styles.registerBold}>Create one</Text>
@@ -150,10 +153,17 @@ const styles = StyleSheet.create({
   logo: {
     width: 64, height: 64, borderRadius: 20,
     alignItems: 'center', justifyContent: 'center',
-    marginBottom: 8, alignSelf: 'center',
+    marginBottom: 4, alignSelf: 'center',
+  },
+  brandLabel: {
+    fontSize: 11, fontWeight: '800', letterSpacing: 2.5,
+    color: Colors.brand.gold, textAlign: 'center', marginBottom: 4,
   },
   title: { fontSize: 28, fontWeight: '700', color: '#fff', textAlign: 'center' },
-  subtitle: { fontSize: 15, color: 'rgba(255,255,255,0.45)', textAlign: 'center', marginBottom: 16 },
+  subtitle: {
+    fontSize: 15, color: 'rgba(255,255,255,0.45)',
+    textAlign: 'center', marginBottom: 16,
+  },
   inputWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: Colors.bg.card,
@@ -167,8 +177,8 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     overflow: 'hidden', marginTop: 8,
   },
-  loginBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  loginBtnText: { fontSize: 16, fontWeight: '800', color: '#000' },
   registerLink: { alignItems: 'center', marginTop: 8 },
   registerText: { fontSize: 14, color: 'rgba(255,255,255,0.45)' },
-  registerBold: { color: Colors.brand.purpleLight, fontWeight: '600' },
+  registerBold: { color: Colors.brand.gold, fontWeight: '600' },
 });

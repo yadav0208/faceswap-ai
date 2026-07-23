@@ -10,7 +10,6 @@ import { Colors, Radius } from '../../constants/theme';
 
 const FILTER_TABS = ['All', 'Videos', 'Photos', 'Occasions'];
 
-// Demo creations matching Fun With AI content
 const DEMO_HISTORY = [
   {
     id: '1', type: 'video', tool: 'Horse Riding Video', date: '2 hours ago',
@@ -66,13 +65,16 @@ export default function HistoryScreen() {
       <SafeAreaView edges={['top']} style={styles.safe}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>My Creations</Text>
+          <View>
+            <Text style={styles.brandLabel}>ANVA AI</Text>
+            <Text style={styles.title}>My Studio</Text>
+          </View>
           <TouchableOpacity style={styles.iconBtn}>
             <Ionicons name="filter-outline" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
 
-        {/* Stats row */}
+        {/* Stats */}
         <View style={styles.statsRow}>
           {[
             { label: 'Generated', value: '24', icon: 'sparkles' },
@@ -80,7 +82,7 @@ export default function HistoryScreen() {
             { label: 'Shared',    value: '9',  icon: 'share-social' },
           ].map((stat) => (
             <View key={stat.label} style={styles.statCard}>
-              <Ionicons name={stat.icon as any} size={16} color={Colors.brand.purpleLight} />
+              <Ionicons name={stat.icon as any} size={16} color={Colors.brand.gold} />
               <Text style={styles.statValue}>{stat.value}</Text>
               <Text style={styles.statLabel}>{stat.label}</Text>
             </View>
@@ -104,12 +106,14 @@ export default function HistoryScreen() {
               >
                 {active && (
                   <LinearGradient
-                    colors={[Colors.brand.purple, Colors.brand.purpleLight]}
+                    colors={[Colors.brand.goldDark, Colors.brand.gold]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                     style={StyleSheet.absoluteFill}
                   />
                 )}
-                <Text style={[styles.filterText, active && styles.filterTextActive]}>{tab}</Text>
+                <Text style={[styles.filterText, active && styles.filterTextActive]}>
+                  {tab}
+                </Text>
               </TouchableOpacity>
             );
           })}
@@ -119,7 +123,9 @@ export default function HistoryScreen() {
           <View style={styles.empty}>
             <Ionicons name="film-outline" size={56} color="rgba(255,255,255,0.15)" />
             <Text style={styles.emptyTitle}>No creations yet</Text>
-            <Text style={styles.emptySub}>Generate your first AI video or image to see it here</Text>
+            <Text style={styles.emptySub}>
+              Generate your first AI image or video to see it here
+            </Text>
           </View>
         ) : (
           <ScrollView
@@ -146,14 +152,12 @@ export default function HistoryScreen() {
                     locations={[0.42, 1]}
                     style={StyleSheet.absoluteFill}
                   />
-                  {/* Video duration badge */}
                   {item.duration && (
                     <View style={styles.durationBadge}>
                       <Ionicons name="play" size={8} color="#fff" />
                       <Text style={styles.durationText}>{item.duration}</Text>
                     </View>
                   )}
-                  {/* Heart */}
                   <TouchableOpacity
                     style={styles.heartBtn}
                     onPress={() => setLiked((p) => ({ ...p, [item.id]: !p[item.id] }))}
@@ -161,7 +165,7 @@ export default function HistoryScreen() {
                     <Ionicons
                       name={liked[item.id] ? 'heart' : 'heart-outline'}
                       size={17}
-                      color={liked[item.id] ? '#EF4444' : '#fff'}
+                      color={liked[item.id] ? Colors.brand.gold : '#fff'}
                     />
                   </TouchableOpacity>
                   <View style={styles.cardFooter}>
@@ -182,35 +186,38 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.bg.primary },
   safe: { flex: 1 },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12,
+    flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingTop: 6, paddingBottom: 14,
   },
-  title: { fontSize: 26, fontWeight: '700', color: '#fff' },
+  brandLabel: {
+    fontSize: 10, fontWeight: '700', letterSpacing: 2.5,
+    color: Colors.brand.gold, marginBottom: 2,
+  },
+  title: { fontSize: 30, fontWeight: '800', color: '#fff', letterSpacing: -0.5 },
   iconBtn: {
     width: 38, height: 38, borderRadius: 19,
     backgroundColor: 'rgba(255,255,255,0.07)',
     alignItems: 'center', justifyContent: 'center',
+    marginTop: 20,
   },
   statsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 14 },
   statCard: {
     flex: 1, backgroundColor: Colors.bg.card, borderRadius: Radius.md,
     alignItems: 'center', paddingVertical: 12, gap: 3,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: Colors.border.gold,
   },
   statValue: { fontSize: 20, fontWeight: '700', color: '#fff' },
   statLabel: { fontSize: 10, color: 'rgba(255,255,255,0.4)' },
-
   filterRow: { paddingHorizontal: 16, gap: 8, paddingBottom: 14 },
   filterTab: {
     paddingHorizontal: 16, paddingVertical: 8, borderRadius: Radius.full,
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: Colors.bg.card,
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.09)',
     overflow: 'hidden',
   },
   filterTabActive: { borderColor: 'transparent' },
   filterText: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.5)' },
-  filterTextActive: { color: '#fff' },
-
+  filterTextActive: { color: '#000', fontWeight: '700' },
   grid: { paddingTop: 4 },
   twoCol: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   card: { borderRadius: Radius.lg, overflow: 'hidden', backgroundColor: Colors.bg.card },
@@ -235,5 +242,8 @@ const styles = StyleSheet.create({
     gap: 12, paddingBottom: 100,
   },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: 'rgba(255,255,255,0.6)' },
-  emptySub: { fontSize: 13, color: 'rgba(255,255,255,0.35)', textAlign: 'center', paddingHorizontal: 40 },
+  emptySub: {
+    fontSize: 13, color: 'rgba(255,255,255,0.35)',
+    textAlign: 'center', paddingHorizontal: 40,
+  },
 });

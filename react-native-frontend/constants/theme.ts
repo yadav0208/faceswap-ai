@@ -1,25 +1,32 @@
 export const Colors = {
   bg: {
-    primary: '#0D0D14',
-    secondary: '#13131E',
-    card: '#1A1A28',
-    elevated: '#20202F',
-    overlay: 'rgba(0,0,0,0.55)',
+    primary: '#0A0A0A',
+    secondary: '#111111',
+    card: '#161616',
+    elevated: '#1C1C1C',
+    overlay: 'rgba(0,0,0,0.6)',
   },
   brand: {
-    purple: '#7C3AED',
-    purpleLight: '#9B5CF6',
-    purpleDark: '#5B21B6',
+    gold: '#C9A84C',
+    goldLight: '#E2C272',
+    goldDark: '#A8863A',
+    goldMuted: 'rgba(201,168,76,0.18)',
+    // keep these aliases so old references still compile
+    purple: '#C9A84C',
+    purpleLight: '#E2C272',
+    purpleDark: '#A8863A',
   },
   text: {
     primary: '#FFFFFF',
-    secondary: 'rgba(255,255,255,0.65)',
-    tertiary: 'rgba(255,255,255,0.38)',
-    accent: '#7C3AED',
+    secondary: 'rgba(255,255,255,0.60)',
+    tertiary: 'rgba(255,255,255,0.35)',
+    accent: '#C9A84C',
+    label: '#C9A84C',      // small uppercase section labels
   },
   border: {
-    subtle: 'rgba(255,255,255,0.07)',
-    default: 'rgba(255,255,255,0.12)',
+    subtle: 'rgba(255,255,255,0.06)',
+    default: 'rgba(255,255,255,0.10)',
+    gold: 'rgba(201,168,76,0.30)',
   },
   status: {
     success: '#22C55E',
@@ -43,4 +50,10 @@ export const Radius = {
   lg: 18,
   xl: 24,
   full: 9999,
+};
+
+// Legacy aliases used by GradientButton
+export const BorderRadius = Radius;
+export const Typography = {
+  h4: { fontWeight: '700' as const, letterSpacing: -0.2 },
 };
