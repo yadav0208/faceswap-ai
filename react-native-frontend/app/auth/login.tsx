@@ -9,7 +9,9 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
+import { API_BASE } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -30,7 +32,7 @@ export default function LoginScreen() {
     }
     setLoading(true);
     try {
-      const res = await fetch('http://10.99.217.247:8000/api/auth/login', {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -60,12 +62,11 @@ export default function LoginScreen() {
 
         <View style={styles.content}>
           {/* Logo */}
-          <LinearGradient
-            colors={[Colors.brand.goldDark, Colors.brand.gold]}
+          <Image
+            source={require('../../assets/brand/anva-mark.png')}
             style={styles.logo}
-          >
-            <Ionicons name="sparkles" size={28} color="#000" />
-          </LinearGradient>
+            resizeMode="contain"
+          />
 
           <Text style={styles.brandLabel}>ANVA AI</Text>
           <Text style={styles.title}>Welcome back</Text>

@@ -210,3 +210,40 @@ export const STUDIOS: Studio[] = [
     category: 'swap',
   },
 ];
+
+const PREMIUM_COVERS: Record<string, ImageSourcePropType> = {
+  ai_videos: require('../assets/templates/anva-street-v2.png'),
+  photo_styles: require('../assets/templates/anva-formal-v2.png'),
+  birthday: require('../assets/templates/anva-birthday-v2.png'),
+  stadium_cam: require('../assets/templates/anva-street-v2.png'),
+  horse_riding: require('../assets/templates/anva-street-v2.png'),
+  dance_video: require('../assets/templates/anva-birthday-v2.png'),
+  talking_photo: require('../assets/templates/anva-formal-v2.png'),
+  retro_1996: require('../assets/templates/anva-formal-v2.png'),
+  birthday_queen: require('../assets/templates/anva-birthday-v2.png'),
+  futuristic_2026: require('../assets/templates/anva-cyber-v2.png'),
+  anime_style: require('../assets/templates/anva-cyber-v2.png'),
+  kids_cartoon: require('../assets/templates/anva-birthday-v2.png'),
+  kids_fairy_tale: require('../assets/templates/anva-wedding-v2.png'),
+  kids_space: require('../assets/templates/anva-cyber-v2.png'),
+  fantasy_armor: require('../assets/templates/anva-fantasy-v2.png'),
+  kids_superhero: require('../assets/templates/anva-fantasy-v2.png'),
+  wedding_look: require('../assets/templates/anva-wedding-v2.png'),
+  ai_portrait: require('../assets/templates/anva-formal-v2.png'),
+  graduation: require('../assets/templates/anva-formal-v2.png'),
+  face_swap: require('../assets/templates/anva-formal-v2.png'),
+  outfit_tryon: require('../assets/templates/anva-street-v2.png'),
+  age_filter: require('../assets/templates/anva-formal-v2.png'),
+};
+
+const DEFAULT_PREMIUM_COVER = require('../assets/templates/anva-street-v2.png');
+
+export function getStudioImageSource(studioId: string): ImageSourcePropType {
+  const studio = STUDIOS.find((item) => item.id === studioId);
+  return studio?.imageUrl ? { uri: studio.imageUrl } : getStudioFallbackSource(studioId);
+}
+
+export function getStudioFallbackSource(studioId: string): ImageSourcePropType {
+  return PREMIUM_COVERS[studioId] ?? DEFAULT_PREMIUM_COVER;
+}
+import type { ImageSourcePropType } from 'react-native';

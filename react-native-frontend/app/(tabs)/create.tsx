@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   Platform, TextInput, Alert, ActivityIndicator,
@@ -10,6 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Colors, Radius } from '../../constants/theme';
 import { API_BASE } from '../../services/api';
+import { saveCreation } from '../../services/savedCreations';
 
 const SIDE_PAD = 16;
 
@@ -24,13 +25,90 @@ const SUGGESTIONS = [
   'A close-up portrait of a warrior queen with gold armor at sunset',
 ];
 
+const VISUAL_STYLES = [
+  {
+    id: 'formal',
+    label: 'Executive',
+    image: require('../../assets/templates/anva-formal-v2.png'),
+    prompt: 'premium black and gold executive editorial photography',
+  },
+  {
+    id: 'birthday',
+    label: 'Birthday',
+    image: require('../../assets/templates/anva-birthday-v2.png'),
+    prompt: 'luxury royal birthday portrait with purple couture and warm gold lights',
+  },
+  {
+    id: 'cyber',
+    label: 'Neon Future',
+    image: require('../../assets/templates/anva-cyber-v2.png'),
+    prompt: 'cinematic violet and blue futuristic editorial style',
+  },
+  {
+    id: 'fantasy',
+    label: 'Fantasy',
+    image: require('../../assets/templates/anva-fantasy-v2.png'),
+    prompt: 'epic premium fantasy portrait with ornate dark armor and cinematic lighting',
+  },
+  {
+    id: 'wedding',
+    label: 'Ivory Royal',
+    image: require('../../assets/templates/anva-wedding-v2.png'),
+    prompt: 'luxury ivory and gold wedding editorial with warm floral bokeh',
+  },
+  {
+    id: 'street',
+    label: 'Night City',
+    image: require('../../assets/templates/anva-street-v2.png'),
+    prompt: 'rainy night city fashion editorial with violet and gold bokeh',
+  },
+] as const;
+
 export default function CreateScreen() {
   const [prompt, setPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
+  const [providerReady, setProviderReady] = useState<boolean | null>(null);
   const [progress, setProgress] = useState(0);
   const [resultUri, setResultUri] = useState<string | null>(null);
+  const [visualStyleId, setVisualStyleId] = useState<string | null>(null);
   const inputRef = useRef<TextInput>(null);
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/health`)
+      .then((response) => response.json())
+      .then((data) => setProviderReady(Boolean(data.provider_configured)))
+      .catch(() => setProviderReady(false));
+  }, []);
+
+  async function enhancePrompt() {
+    if (prompt.trim().length < 3) {
+      Alert.alert('Add an idea', 'Write a short idea first, then let AI improve it.');
+      return;
+    }
+    setEnhancing(true);
+    try {
+      const formData = new FormData();
+      const visualStyle = VISUAL_STYLES.find((style) => style.id === visualStyleId);
+      const generationPrompt = visualStyle
+        ? `${prompt.trim()}, ${visualStyle.prompt}`
+        : prompt.trim();
+      formData.append('prompt', generationPrompt);
+      const response = await fetch(`${API_BASE}/api/generate/enhance-prompt`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || 'Could not enhance the prompt.');
+      setPrompt(data.prompt);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error: any) {
+      Alert.alert('Prompt assistant', error.message || 'Could not reach the AI assistant.');
+    } finally {
+      setEnhancing(false);
+    }
+  }
 
   async function generate() {
     if (!prompt.trim()) {
@@ -48,7 +126,11 @@ export default function CreateScreen() {
 
     try {
       const formData = new FormData();
-      formData.append('prompt', prompt.trim());
+      const visualStyle = VISUAL_STYLES.find((style) => style.id === visualStyleId);
+      const generationPrompt = visualStyle
+        ? `${prompt.trim()}, ${visualStyle.prompt}`
+        : prompt.trim();
+      formData.append('prompt', generationPrompt);
 
       const resp = await fetch(`${API_BASE}/api/generate/prompt`, {
         method: 'POST',
@@ -99,6 +181,21 @@ export default function CreateScreen() {
     inputRef.current?.focus();
   }
 
+  async function saveResult() {
+    if (!resultUri) return;
+    try {
+      const selectedStyle = VISUAL_STYLES.find((style) => style.id === visualStyleId);
+      await saveCreation({
+        uri: resultUri,
+        title: selectedStyle?.label ?? 'Anva Creation',
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert('Saved', 'Your image is now in My Studio.');
+    } catch {
+      Alert.alert('Could not save', 'Please try again.');
+    }
+  }
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" />
@@ -111,26 +208,100 @@ export default function CreateScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={[
               styles.scroll,
-              { paddingBottom: Platform.OS === 'ios' ? 130 : 110 },
+              { paddingBottom: Platform.OS === 'ios' ? 190 : 170 },
             ]}
             keyboardShouldPersistTaps="handled"
           >
             {/* ── Header ── */}
             <View style={styles.header}>
-              <Text style={styles.sectionLabel}>CUSTOM GENERATOR</Text>
-              <Text style={styles.heroTitle}>Dream it,{'\n'}generate it.</Text>
+              <View style={styles.headerTop}>
+                <View>
+                  <Text style={styles.sectionLabel}>ANVA CREATE</Text>
+                  <Text style={styles.heroTitle}>Create an image</Text>
+                </View>
+                <View style={styles.creditPill}>
+                  <Ionicons name="sparkles" size={13} color={Colors.brand.gold} />
+                  <Text style={styles.creditText}>AI</Text>
+                </View>
+              </View>
               <Text style={styles.heroSub}>
-                Describe any visual and Anva will{'\n'}render it in studio quality.
+                Turn a simple idea into a studio-quality visual.
               </Text>
             </View>
 
+            <Text style={styles.tryLabel}>MODEL</Text>
+            <View style={styles.modelCard}>
+              <View style={styles.modelIcon}>
+                <Ionicons name="color-wand" size={20} color="#090909" />
+              </View>
+              <View style={styles.modelCopy}>
+                <Text style={styles.modelName}>Anva Image Studio</Text>
+                <Text style={styles.modelSub}>
+                  {providerReady === null
+                    ? 'Checking image provider…'
+                    : providerReady
+                      ? 'FLUX Schnell · ready'
+                      : 'Free API key required'}
+                </Text>
+              </View>
+              <View style={[styles.activeDot, providerReady === false && styles.inactiveDot]} />
+            </View>
+
+            <Text style={styles.tryLabel}>VISUAL STYLE</Text>
+            <ScrollView
+              horizontal
+              nestedScrollEnabled
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.visualStyleRow}
+            >
+              {VISUAL_STYLES.map((style) => {
+                const selected = visualStyleId === style.id;
+                return (
+                  <TouchableOpacity
+                    key={style.id}
+                    activeOpacity={0.84}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setVisualStyleId(selected ? null : style.id);
+                    }}
+                    style={[styles.visualStyleCard, selected && styles.visualStyleCardSelected]}
+                  >
+                    <Image source={style.image} style={styles.visualStyleImage} resizeMode="cover" />
+                    <LinearGradient
+                      colors={['transparent', 'rgba(0,0,0,0.88)']}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <Text style={styles.visualStyleLabel} numberOfLines={1}>{style.label}</Text>
+                    {selected && (
+                      <View style={styles.visualStyleCheck}>
+                        <Ionicons name="checkmark" size={12} color="#000" />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
             {/* ── Prompt Input ── */}
+            <View style={styles.promptHeading}>
+              <Text style={[styles.tryLabel, styles.promptHeadingLabel]}>PROMPT</Text>
+              <TouchableOpacity
+                onPress={enhancePrompt}
+                disabled={enhancing || prompt.trim().length < 3}
+                style={styles.enhanceBtn}
+              >
+                {enhancing
+                  ? <ActivityIndicator size="small" color={Colors.brand.gold} />
+                  : <Ionicons name="sparkles-outline" size={14} color={Colors.brand.gold} />}
+                <Text style={styles.enhanceText}>{enhancing ? 'Improving…' : 'Enhance with AI'}</Text>
+              </TouchableOpacity>
+            </View>
             <View style={styles.inputCard}>
               <TextInput
                 ref={inputRef}
                 value={prompt}
                 onChangeText={setPrompt}
-                placeholder="A cinematic close-up portrait of…"
+                placeholder="Describe the subject, scene, mood and style…"
                 placeholderTextColor="rgba(255,255,255,0.25)"
                 style={styles.input}
                 multiline
@@ -145,7 +316,7 @@ export default function CreateScreen() {
             </View>
 
             {/* ── Suggestion chips ── */}
-            <Text style={styles.tryLabel}>TRY ONE OF THESE</Text>
+            <Text style={styles.tryLabel}>INSPIRATION</Text>
             <View style={styles.chips}>
               {SUGGESTIONS.map((s, i) => (
                 <TouchableOpacity
@@ -170,7 +341,7 @@ export default function CreateScreen() {
                     style={styles.resultGradient}
                   />
                   <View style={styles.resultActions}>
-                    <TouchableOpacity style={styles.actionBtn}>
+                    <TouchableOpacity style={styles.actionBtn} onPress={saveResult}>
                       <Ionicons name="download-outline" size={18} color="#fff" />
                       <Text style={styles.actionBtnText}>Save</Text>
                     </TouchableOpacity>
@@ -238,10 +409,21 @@ export default function CreateScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.bg.primary },
   safe: { flex: 1 },
-  scroll: { paddingHorizontal: SIDE_PAD },
+  scroll: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
+    paddingHorizontal: SIDE_PAD,
+  },
 
   /* Header */
   header: { paddingTop: 8, paddingBottom: 24 },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
   sectionLabel: {
     fontSize: 11,
     fontWeight: '800',
@@ -250,11 +432,11 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   heroTitle: {
-    fontSize: 40,
+    fontSize: 34,
     fontWeight: '800',
     color: '#fff',
     letterSpacing: -1,
-    lineHeight: 46,
+    lineHeight: 40,
     marginBottom: 10,
   },
   heroSub: {
@@ -262,6 +444,101 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.52)',
     lineHeight: 22,
   },
+  creditPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.brand.goldMuted,
+    borderWidth: 1,
+    borderColor: Colors.border.gold,
+    borderRadius: Radius.full,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    marginTop: 4,
+  },
+  creditText: { color: Colors.brand.gold, fontSize: 11, fontWeight: '800' },
+  modelCard: {
+    minHeight: 70,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.bg.card,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border.gold,
+    padding: 12,
+    marginBottom: 22,
+  },
+  modelIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.brand.gold,
+  },
+  modelCopy: { flex: 1, paddingHorizontal: 12 },
+  modelName: { color: '#fff', fontSize: 14, fontWeight: '700', marginBottom: 3 },
+  modelSub: { color: Colors.text.tertiary, fontSize: 12 },
+  activeDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: Colors.status.success,
+  },
+  inactiveDot: { backgroundColor: Colors.status.error },
+  visualStyleRow: { gap: 10, paddingRight: SIDE_PAD, paddingBottom: 22 },
+  visualStyleCard: {
+    width: 104,
+    height: 132,
+    borderRadius: Radius.md,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    justifyContent: 'flex-end',
+    backgroundColor: Colors.bg.card,
+  },
+  visualStyleCardSelected: { borderColor: Colors.brand.gold },
+  visualStyleImage: { width: '100%', height: '100%' },
+  visualStyleLabel: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    color: '#fff',
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
+    paddingHorizontal: 9,
+    paddingBottom: 10,
+  },
+  visualStyleCheck: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.brand.gold,
+  },
+  promptHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  promptHeadingLabel: { marginBottom: 0 },
+  enhanceBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 32,
+    paddingHorizontal: 10,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.brand.goldMuted,
+  },
+  enhanceText: { color: Colors.brand.gold, fontSize: 11, fontWeight: '700' },
 
   /* Prompt input */
   inputCard: {
@@ -271,7 +548,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.08)',
     padding: 16,
     minHeight: 148,
-    marginBottom: 26,
+    marginBottom: 24,
   },
   input: {
     fontSize: 15,
@@ -354,8 +631,12 @@ const styles = StyleSheet.create({
 
   /* CTA bar */
   ctaWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: Platform.OS === 'ios' ? 84 : 64,
     paddingHorizontal: SIDE_PAD,
-    paddingBottom: Platform.OS === 'ios' ? 36 : 22,
+    paddingBottom: 12,
     paddingTop: 12,
     backgroundColor: Colors.bg.primary,
     borderTopWidth: 1,

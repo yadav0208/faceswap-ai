@@ -14,10 +14,35 @@ from app.auth import get_current_user
 from app.config import settings
 from app.ai.image_processor import image_processor, VIDEO_STUDIOS
 from app.ai.face_detector import face_detector
+from app.ai.prompt_engine import build_generation_prompt, clean_prompt
+from app.ai.gemini_provider import gemini_provider
 import logging
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/generate", tags=["generate"])
+
+
+def _local_enhance_prompt(prompt: str) -> str:
+    """Useful no-key fallback for prompt enhancement."""
+    return (
+        f"{clean_prompt(prompt)}, clear primary subject, intentional composition, "
+        "cinematic depth, realistic materials and fine texture, professional lighting, "
+        "balanced color palette, sharp focal detail, high-end editorial finish"
+    )
+
+
+@router.post("/enhance-prompt")
+async def enhance_prompt(prompt: str = Form(...)):
+    prompt = clean_prompt(prompt)
+    if len(prompt) < 3:
+        raise HTTPException(400, detail="Enter at least three characters.")
+    if gemini_provider.configured:
+        try:
+            enhanced = gemini_provider.enhance_prompt(prompt)
+            return {"prompt": enhanced, "provider": settings.GEMINI_TEXT_MODEL}
+        except Exception as exc:
+            logger.warning("Gemini prompt enhancement failed: %s", exc)
+    return {"prompt": _local_enhance_prompt(prompt), "provider": "Anva local enhancer"}
 
 
 def _gen_to_schema(g: Generation) -> GenerationOut:
@@ -148,7 +173,7 @@ async def create_generation(
         pose_template_id=template.id,
         source_image_path=upload_path,
         gender=gender,
-        style_prompt=style_prompt,
+        style_prompt=build_generation_prompt(studio_id, pose_id, style_prompt),
         status="pending",
         confidence_score=detection.get("confidence"),
     )
@@ -168,7 +193,8 @@ async def create_prompt_generation(
     current_user: Optional[User] = Depends(get_current_user),
 ):
     """Generate an image from a text prompt — no photo upload required."""
-    if not prompt.strip():
+    prompt = clean_prompt(prompt)
+    if len(prompt) < 3:
         raise HTTPException(400, detail="Prompt cannot be empty.")
 
     template = await _get_template(db, 1)
@@ -180,7 +206,7 @@ async def create_prompt_generation(
         pose_template_id=template.id,
         source_image_path="prompt_only",   # sentinel value
         gender="auto",
-        style_prompt=prompt.strip(),
+        style_prompt=build_generation_prompt("custom_generator", user_prompt=prompt),
         status="pending",
         confidence_score=None,
     )

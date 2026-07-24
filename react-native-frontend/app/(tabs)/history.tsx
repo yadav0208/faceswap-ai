@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Image, useWindowDimensions, Platform,
@@ -7,58 +7,47 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Radius } from '../../constants/theme';
+import { useFocusEffect } from 'expo-router';
+import {
+  getSavedCreations,
+  removeSavedCreation,
+  SavedCreation,
+} from '../../services/savedCreations';
 
 const FILTER_TABS = ['All', 'Videos', 'Photos', 'Occasions'];
-
-const DEMO_HISTORY = [
-  {
-    id: '1', type: 'video', tool: 'Horse Riding Video', date: '2 hours ago',
-    resultUrl: 'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?w=400&q=80',
-    duration: '6s',
-  },
-  {
-    id: '2', type: 'photo', tool: 'Birthday Photoshoot', date: 'Yesterday',
-    resultUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80',
-    duration: null,
-  },
-  {
-    id: '3', type: 'photo', tool: 'Trending AI Photo Styles', date: '2 days ago',
-    resultUrl: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80',
-    duration: null,
-  },
-  {
-    id: '4', type: 'video', tool: 'AI Stadium Cam', date: '3 days ago',
-    resultUrl: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=400&q=80',
-    duration: '8s',
-  },
-  {
-    id: '5', type: 'photo', tool: 'Anime Style', date: 'Last week',
-    resultUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&q=80',
-    duration: null,
-  },
-  {
-    id: '6', type: 'video', tool: 'Viral Dance Video', date: 'Last week',
-    resultUrl: 'https://images.unsplash.com/photo-1504609813442-a8924e83f76e?w=400&q=80',
-    duration: '5s',
-  },
-];
 
 export default function HistoryScreen() {
   const { width } = useWindowDimensions();
   const SIDE_PAD = 16;
   const GAP = 10;
-  const cardW = (width - SIDE_PAD * 2 - GAP) / 2;
+  const availableWidth = Math.min(width, 720);
+  const cardW = (availableWidth - SIDE_PAD * 2 - GAP) / 2;
   const cardH = cardW * 1.45;
-  const [liked, setLiked] = useState<Record<string, boolean>>({});
+  const [creations, setCreations] = useState<SavedCreation[]>([]);
   const [activeFilter, setActiveFilter] = useState('All');
 
-  const filtered = DEMO_HISTORY.filter((item) => {
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      getSavedCreations().then((items) => {
+        if (active) setCreations(items);
+      });
+      return () => { active = false; };
+    }, []),
+  );
+
+  const filtered = creations.filter((item) => {
     if (activeFilter === 'All') return true;
-    if (activeFilter === 'Videos') return item.type === 'video';
+    if (activeFilter === 'Videos') return false;
     if (activeFilter === 'Photos') return item.type === 'photo';
-    if (activeFilter === 'Occasions') return ['Birthday Photoshoot', 'Wedding Look'].includes(item.tool);
+    if (activeFilter === 'Occasions') return ['Royal Birthday', 'Ivory Royal'].includes(item.title);
     return true;
   });
+
+  async function removeCreation(id: string) {
+    await removeSavedCreation(id);
+    setCreations((items) => items.filter((item) => item.id !== id));
+  }
 
   return (
     <View style={styles.root}>
@@ -77,9 +66,9 @@ export default function HistoryScreen() {
         {/* Stats */}
         <View style={styles.statsRow}>
           {[
-            { label: 'Generated', value: '24', icon: 'sparkles' },
-            { label: 'Videos',    value: '16', icon: 'film' },
-            { label: 'Shared',    value: '9',  icon: 'share-social' },
+            { label: 'Saved', value: String(creations.length), icon: 'bookmark' },
+            { label: 'Photos', value: String(creations.length), icon: 'images' },
+            { label: 'Videos', value: '0', icon: 'film' },
           ].map((stat) => (
             <View key={stat.label} style={styles.statCard}>
               <Ionicons name={stat.icon as any} size={16} color={Colors.brand.gold} />
@@ -92,6 +81,7 @@ export default function HistoryScreen() {
         {/* Filter tabs */}
         <ScrollView
           horizontal
+          style={styles.filterScroll}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterRow}
         >
@@ -111,7 +101,10 @@ export default function HistoryScreen() {
                     style={StyleSheet.absoluteFill}
                   />
                 )}
-                <Text style={[styles.filterText, active && styles.filterTextActive]}>
+                <Text
+                  allowFontScaling={false}
+                  style={[styles.filterText, active && styles.filterTextActive]}
+                >
                   {tab}
                 </Text>
               </TouchableOpacity>
@@ -135,7 +128,7 @@ export default function HistoryScreen() {
               { paddingHorizontal: SIDE_PAD, paddingBottom: Platform.OS === 'ios' ? 100 : 80 },
             ]}
           >
-            <View style={styles.twoCol}>
+            <View style={[styles.twoCol, { maxWidth: availableWidth, alignSelf: 'center' }]}>
               {filtered.map((item) => (
                 <TouchableOpacity
                   key={item.id}
@@ -143,8 +136,8 @@ export default function HistoryScreen() {
                   activeOpacity={0.88}
                 >
                   <Image
-                    source={{ uri: item.resultUrl }}
-                    style={StyleSheet.absoluteFillObject as any}
+                    source={{ uri: item.uri }}
+                    style={styles.cardImage}
                     resizeMode="cover"
                   />
                   <LinearGradient
@@ -152,25 +145,21 @@ export default function HistoryScreen() {
                     locations={[0.42, 1]}
                     style={StyleSheet.absoluteFill}
                   />
-                  {item.duration && (
-                    <View style={styles.durationBadge}>
-                      <Ionicons name="play" size={8} color="#fff" />
-                      <Text style={styles.durationText}>{item.duration}</Text>
-                    </View>
-                  )}
                   <TouchableOpacity
                     style={styles.heartBtn}
-                    onPress={() => setLiked((p) => ({ ...p, [item.id]: !p[item.id] }))}
+                    onPress={() => removeCreation(item.id)}
                   >
                     <Ionicons
-                      name={liked[item.id] ? 'heart' : 'heart-outline'}
+                      name="trash-outline"
                       size={17}
-                      color={liked[item.id] ? Colors.brand.gold : '#fff'}
+                      color="#fff"
                     />
                   </TouchableOpacity>
                   <View style={styles.cardFooter}>
-                    <Text style={styles.cardTool}>{item.tool}</Text>
-                    <Text style={styles.cardDate}>{item.date}</Text>
+                    <Text style={styles.cardTool} numberOfLines={1}>{item.title}</Text>
+                    <Text style={styles.cardDate} numberOfLines={1}>
+                      {new Date(item.createdAt).toLocaleDateString()}
+                    </Text>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -208,19 +197,32 @@ const styles = StyleSheet.create({
   },
   statValue: { fontSize: 20, fontWeight: '700', color: '#fff' },
   statLabel: { fontSize: 10, color: 'rgba(255,255,255,0.4)' },
-  filterRow: { paddingHorizontal: 16, gap: 8, paddingBottom: 14 },
+  filterScroll: { flexGrow: 0, flexShrink: 0 },
+  filterRow: {
+    paddingHorizontal: 16,
+    gap: 8,
+    paddingBottom: 14,
+    minHeight: 52,
+    alignItems: 'flex-start',
+  },
   filterTab: {
+    minHeight: 38, minWidth: 72,
     paddingHorizontal: 16, paddingVertical: 8, borderRadius: Radius.full,
     backgroundColor: Colors.bg.card,
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.09)',
     overflow: 'hidden',
+    alignItems: 'center', justifyContent: 'center',
   },
   filterTabActive: { borderColor: 'transparent' },
-  filterText: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.5)' },
+  filterText: {
+    fontSize: 13, lineHeight: 18, fontWeight: '600',
+    color: 'rgba(255,255,255,0.5)', includeFontPadding: false,
+  },
   filterTextActive: { color: '#000', fontWeight: '700' },
   grid: { paddingTop: 4 },
   twoCol: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   card: { borderRadius: Radius.lg, overflow: 'hidden', backgroundColor: Colors.bg.card },
+  cardImage: { width: '100%', height: '100%' },
   durationBadge: {
     position: 'absolute', top: 10, left: 10,
     flexDirection: 'row', alignItems: 'center', gap: 3,

@@ -20,18 +20,33 @@ from typing import Optional, Tuple
 import logging
 import asyncio
 import urllib.request
+from app.config import settings
+from app.ai.gemini_provider import gemini_provider
+from app.ai.huggingface_provider import huggingface_provider
+from app.ai.magic_hour_provider import magic_hour_provider
 
 logger = logging.getLogger(__name__)
 
 # ── Studios that output MP4 ───────────────────────────────────────────────────
 VIDEO_STUDIOS = {
     "ai_videos", "dance_video", "talking_photo",
-    "horse_riding", "kids_cartoon", "kids_superhero",
+    "horse_riding", "fantasy_armor", "stadium_cam",
+    "kids_cartoon", "kids_superhero",
     "kids_fairy_tale", "kids_space", "kids_dinosaur", "kids_underwater",
 }
 
 _CACHE_DIR = Path("pose_templates/cached_photos")
 _CACHE_DIR.mkdir(parents=True, exist_ok=True)
+_PREMIUM_TEMPLATE_DIR = Path("pose_templates/premium")
+
+PREMIUM_TEMPLATE_FILES: dict[str, str] = {
+    "premium_formal": "premium-formal.png",
+    "premium_birthday": "premium-birthday.png",
+    "premium_cyber": "premium-cyber.png",
+    "premium_fantasy": "premium-fantasy.png",
+    "premium_wedding": "premium-wedding.png",
+    "premium_street": "premium-street.png",
+}
 
 # ── Target photo URLs keyed by studio_id_pose_id ─────────────────────────────
 POSE_PHOTO_URLS: dict[str, str] = {
@@ -540,6 +555,14 @@ def generate_prompt_image(prompt: str, output_path: str, size=(512, 768)) -> Tup
 # ── Pose-photo downloader ─────────────────────────────────────────────────────
 
 def _download_pose_photo(studio_id: str, pose_id: str) -> Optional[str]:
+    premium_file = PREMIUM_TEMPLATE_FILES.get(pose_id)
+    if premium_file:
+        local_template = _PREMIUM_TEMPLATE_DIR / premium_file
+        if local_template.exists():
+            return str(local_template)
+        logger.error("Premium template is missing: %s", local_template)
+        return None
+
     key = f"{studio_id}_{pose_id}"
     cached = _CACHE_DIR / f"{key}.jpg"
     if cached.exists():
@@ -600,6 +623,49 @@ class ImageProcessor:
         self._app = None
         self._swapper = None
         self._ready = False
+        self._image_pipeline = None
+        self._image_pipeline_failed = False
+
+    def _generate_ai_image(self, prompt: str, output_path: str):
+        """Generate with Diffusers when configured; fail softly to the local renderer."""
+        if not settings.USE_AI_MODELS or self._image_pipeline_failed:
+            return None
+        try:
+            if self._image_pipeline is None:
+                import torch
+                from diffusers import StableDiffusionPipeline
+
+                dtype = torch.float16 if settings.DEVICE.startswith("cuda") else torch.float32
+                logger.info("Loading image model %s on %s", settings.IMAGE_MODEL_ID, settings.DEVICE)
+                self._image_pipeline = StableDiffusionPipeline.from_pretrained(
+                    settings.IMAGE_MODEL_ID,
+                    torch_dtype=dtype,
+                    token=settings.HF_TOKEN,
+                    safety_checker=None,
+                )
+                self._image_pipeline.to(settings.DEVICE)
+                if settings.DEVICE == "cpu":
+                    self._image_pipeline.enable_attention_slicing()
+
+            negative = (
+                "blurry, low quality, distorted, disfigured, duplicate, extra limbs, "
+                "bad hands, bad anatomy, text, watermark, logo"
+            )
+            image = self._image_pipeline(
+                prompt=prompt,
+                negative_prompt=negative,
+                width=settings.IMAGE_WIDTH,
+                height=settings.IMAGE_HEIGHT,
+                num_inference_steps=settings.IMAGE_STEPS,
+                guidance_scale=7.5,
+            ).images[0]
+            Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+            image.save(output_path, quality=95)
+            return True, None
+        except Exception as exc:
+            self._image_pipeline_failed = True
+            logger.warning("AI image model unavailable; using local fallback: %s", exc)
+            return None
 
     def initialize(self):
         try:
@@ -652,7 +718,21 @@ class ImageProcessor:
         try:
             # Prompt-only generation (no source image)
             if studio_id == "custom_generator" or source_path == "prompt_only":
-                return generate_prompt_image(style_prompt or "A cinematic portrait", output_path)
+                if settings.IMAGE_PROVIDER == "magic_hour":
+                    return magic_hour_provider.generate_image(style_prompt, output_path)
+                if settings.IMAGE_PROVIDER == "huggingface":
+                    return huggingface_provider.generate_image(style_prompt, output_path)
+                if settings.IMAGE_PROVIDER == "gemini":
+                    if not gemini_provider.configured:
+                        return False, (
+                            "Image generation is not configured. Add GEMINI_API_KEY to backend/.env "
+                            "and enable image API billing, or set IMAGE_PROVIDER=local."
+                        )
+                    return gemini_provider.generate_image(style_prompt, output_path)
+                ai_result = self._generate_ai_image(style_prompt, output_path)
+                if ai_result is not None:
+                    return ai_result
+                return False, "The local image model could not be loaded. Check backend logs."
 
             target_path = _download_pose_photo(studio_id, pose_id) or template_path
 
@@ -660,6 +740,10 @@ class ImageProcessor:
                 mp4_out = output_path if output_path.endswith(".mp4") else output_path.replace(".jpg", ".mp4")
                 return self._make_motion_video(source_path, target_path, mp4_out, studio_id, pose_id)
             else:
+                if settings.FACE_SWAP_PROVIDER == "magic_hour" and magic_hour_provider.configured:
+                    return magic_hour_provider.swap_photo(
+                        source_path, target_path, output_path
+                    )
                 return self._swap_image(source_path, target_path, output_path, studio_id, pose_id)
         except Exception as e:
             logger.error(f"Generation error: {e}", exc_info=True)
@@ -850,6 +934,18 @@ class ImageProcessor:
 
     # ── Shared helpers ───────────────────────────────────────────────────────
     def _haar_detect(self, img):
+        if not hasattr(cv2, "CascadeClassifier") or not hasattr(cv2, "data"):
+            # OpenCV 5 minimal wheels omit Haar cascades. Return a conservative
+            # center-face estimate so the precision blend remains operational.
+            h, w = img.shape[:2]
+            side = int(min(w, h) * 0.42)
+            return {
+                "found": True,
+                "x": max(0, (w - side) // 2),
+                "y": max(0, int(h * 0.10)),
+                "w": side,
+                "h": side,
+            }
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         cascade = cv2.CascadeClassifier(
             cv2.data.haarcascades + "haarcascade_frontalface_default.xml")

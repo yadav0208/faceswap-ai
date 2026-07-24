@@ -15,18 +15,24 @@ export const Colors = {
     purple: '#C9A84C',
     purpleLight: '#E2C272',
     purpleDark: '#A8863A',
+    from: '#A8863A',
+    to: '#E2C272',
   },
   text: {
     primary: '#FFFFFF',
     secondary: 'rgba(255,255,255,0.60)',
     tertiary: 'rgba(255,255,255,0.35)',
     accent: '#C9A84C',
-    label: '#C9A84C',      // small uppercase section labels
+    label: '#C9A84C',
   },
   border: {
     subtle: 'rgba(255,255,255,0.06)',
     default: 'rgba(255,255,255,0.10)',
+    bright: 'rgba(255,255,255,0.18)',
     gold: 'rgba(201,168,76,0.30)',
+  },
+  accent: {
+    gold: '#C9A84C',
   },
   status: {
     success: '#22C55E',
@@ -56,4 +62,6 @@ export const Radius = {
 export const BorderRadius = Radius;
 export const Typography = {
   h4: { fontWeight: '700' as const, letterSpacing: -0.2 },
+  bodySmall: { fontSize: 13, lineHeight: 18 },
+  caption: { fontSize: 12, lineHeight: 16 },
 };

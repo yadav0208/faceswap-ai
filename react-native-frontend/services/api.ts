@@ -1,15 +1,25 @@
 import axios, { AxiosInstance } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
-// Change this to your machine's IP when testing on a device
-const BASE_URL = 'http://10.99.217.247:8000';
+const isLocalWeb =
+  Platform.OS === 'web' &&
+  typeof window !== 'undefined' &&
+  ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+// Local browser traffic goes directly to FastAPI; phones and Expo Go use the
+// configured public backend so the app is reachable outside localhost.
+export const API_BASE =
+  isLocalWeb
+    ? 'http://localhost:8000'
+    : (process.env.EXPO_PUBLIC_API_URL || 'https://anva-ai-backend.loca.lt').replace(/\/$/, '');
 
 class ApiService {
   private client: AxiosInstance;
 
   constructor() {
     this.client = axios.create({
-      baseURL: BASE_URL,
+      baseURL: API_BASE,
       timeout: 60000,
     });
 
@@ -65,11 +75,11 @@ class ApiService {
   }
 
   getPoseImageUrl(poseId: number) {
-    return `${BASE_URL}/api/poses/${poseId}/image`;
+    return `${API_BASE}/api/poses/${poseId}/image`;
   }
 
   getPoseThumbnailUrl(poseId: number) {
-    return `${BASE_URL}/api/poses/${poseId}/thumbnail`;
+    return `${API_BASE}/api/poses/${poseId}/thumbnail`;
   }
 
   // ─── Generate ─────────────────────────────────────────────────────────────
@@ -102,7 +112,7 @@ class ApiService {
   }
 
   getResultImageUrl(generationId: number) {
-    return `${BASE_URL}/api/generate/${generationId}/result`;
+    return `${API_BASE}/api/generate/${generationId}/result`;
   }
 
   async getHistory() {
@@ -144,7 +154,6 @@ class ApiService {
 }
 
 export const api = new ApiService();
-export const API_BASE = 'http://10.99.217.247:8000';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

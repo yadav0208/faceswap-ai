@@ -25,6 +25,21 @@ class Settings(BaseSettings):
     USE_AI_MODELS: bool = True
     HF_TOKEN: Optional[str] = None
     DEVICE: str = "cpu"
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_TEXT_MODEL: str = "gemini-2.5-flash"
+    GEMINI_IMAGE_MODEL: str = "gemini-2.5-flash-image"
+    IMAGE_PROVIDER: str = "magic_hour"
+    HF_PROVIDER: str = "auto"
+    HF_IMAGE_MODEL: str = "black-forest-labs/FLUX.1-schnell"
+    HF_IMAGE_STEPS: int = 4
+    FACE_SWAP_PROVIDER: str = "magic_hour"
+    MAGIC_HOUR_API_KEY: Optional[str] = None
+    MAGIC_HOUR_IMAGE_MODEL: str = "flux-schnell"
+    AI_REQUEST_TIMEOUT_SECONDS: int = 120
+    IMAGE_MODEL_ID: str = "runwayml/stable-diffusion-v1-5"
+    IMAGE_WIDTH: int = 512
+    IMAGE_HEIGHT: int = 768
+    IMAGE_STEPS: int = 28
 
     class Config:
         env_file = ".env"

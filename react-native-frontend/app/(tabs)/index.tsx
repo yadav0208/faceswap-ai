@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  useWindowDimensions, Platform, Image, StatusBar,
+  useWindowDimensions, Platform, Image, StatusBar, ImageSourcePropType,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,37 +12,23 @@ import { Colors, Radius } from '../../constants/theme';
 
 const SIDE_PAD = 16;
 
+// The five curated target templates used by the Magic Hour face-swap flow.
 const FEED_ITEMS = [
-  { id: 'dance_video',      type: 'VIDEO' as const, title: 'AI Kids Dance',
-    subtitle: "Turn your child's photo into a dance moment",
-    imageUrl: 'https://images.unsplash.com/photo-1547153760-18fc86324498?w=800&h=900&fit=crop&q=85' },
-  { id: 'ai_portrait',      type: 'IMAGE' as const, title: 'AI Studio Portrait',
-    subtitle: 'Professional studio-quality headshots in seconds',
-    imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=900&fit=crop&q=85' },
-  { id: 'futuristic_2026',  type: 'IMAGE' as const, title: '2026 Futuristic Style',
-    subtitle: 'Sleek AI-enhanced portraits with neon vibes',
-    imageUrl: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=800&h=900&fit=crop&q=85' },
-  { id: 'horse_riding',     type: 'VIDEO' as const, title: 'Horse Riding Video',
-    subtitle: 'Cinematic clip of you riding through a scene',
-    imageUrl: 'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?w=800&h=900&fit=crop&q=85' },
-  { id: 'anime_style',      type: 'IMAGE' as const, title: 'Anime / Manga Style',
-    subtitle: 'Turn yourself into stunning anime art',
-    imageUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&h=900&fit=crop&q=85' },
-  { id: 'birthday',         type: 'IMAGE' as const, title: 'Birthday Photoshoots',
-    subtitle: 'AI birthday portraits & celebration cards',
-    imageUrl: 'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=800&h=900&fit=crop&q=85' },
-  { id: 'stadium_cam',      type: 'VIDEO' as const, title: 'AI Stadium Cam',
-    subtitle: 'Put yourself in a live stadium crowd',
-    imageUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&h=900&fit=crop&q=85' },
-  { id: 'face_swap',        type: 'IMAGE' as const, title: 'Face Swap',
-    subtitle: 'Swap faces with anyone in any photo',
-    imageUrl: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&h=900&fit=crop&q=85' },
-  { id: 'wedding_look',     type: 'IMAGE' as const, title: 'Wedding Look',
-    subtitle: 'Bridal & groom AI photoshoot',
-    imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=900&fit=crop&q=85' },
-  { id: 'fantasy_armor',    type: 'VIDEO' as const, title: 'Fantasy Armor',
-    subtitle: 'Transform into a cinematic fantasy warrior',
-    imageUrl: 'https://images.unsplash.com/photo-1535666669445-e8c15cd2e7d9?w=800&h=900&fit=crop&q=85' },
+  { id: 'ai_portrait', type: 'MAGIC HOUR' as const, title: 'Midnight Executive',
+    subtitle: 'Black tailoring · gold studio light',
+    image: require('../../assets/templates/anva-formal-v2.png') as ImageSourcePropType },
+  { id: 'birthday', type: 'MAGIC HOUR' as const, title: 'Royal Birthday',
+    subtitle: 'Purple couture · gold celebration',
+    image: require('../../assets/templates/anva-birthday-v2.png') as ImageSourcePropType },
+  { id: 'futuristic_2026', type: 'MAGIC HOUR' as const, title: 'Neon Future',
+    subtitle: 'Violet cyber fashion · blue rim light',
+    image: require('../../assets/templates/anva-cyber-v2.png') as ImageSourcePropType },
+  { id: 'fantasy_armor', type: 'MAGIC HOUR' as const, title: 'Golden Warrior',
+    subtitle: 'Cinematic armor · castle atmosphere',
+    image: require('../../assets/templates/anva-fantasy-v2.png') as ImageSourcePropType },
+  { id: 'wedding_look', type: 'MAGIC HOUR' as const, title: 'Ivory Royal',
+    subtitle: 'Luxury wedding · warm floral bokeh',
+    image: require('../../assets/templates/anva-wedding-v2.png') as ImageSourcePropType },
 ];
 
 type FeedItem = typeof FEED_ITEMS[0];
@@ -54,21 +40,21 @@ function FeedCard({ item, cardH, onPress }: { item: FeedItem; cardH: number; onP
       activeOpacity={0.92}
       style={[styles.card, { height: cardH }]}
     >
-      <Image source={{ uri: item.imageUrl }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+      <Image source={item.image} style={styles.cardImage} resizeMode="cover" />
       <LinearGradient
         colors={['rgba(0,0,0,0.0)', 'rgba(0,0,0,0.30)', 'rgba(0,0,0,0.80)']}
         locations={[0.2, 0.55, 1]}
         style={StyleSheet.absoluteFillObject}
       />
       {/* Type badge */}
-      <View style={[styles.typeBadge, item.type === 'VIDEO' ? styles.badgeVideo : styles.badgeImage]}>
-        <Ionicons name={item.type === 'VIDEO' ? 'play' : 'image'} size={10} color="#fff" />
+      <View style={[styles.typeBadge, styles.badgeImage]}>
+        <Ionicons name="sparkles" size={10} color="#fff" />
         <Text style={styles.badgeText}>{item.type}</Text>
       </View>
       {/* Content */}
       <View style={styles.cardFooter}>
-        <Text style={styles.cardTitle}>{item.title}</Text>
-        <Text style={styles.cardSub}>{item.subtitle}</Text>
+        <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+        <Text style={styles.cardSub} numberOfLines={2}>{item.subtitle}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -77,7 +63,7 @@ function FeedCard({ item, cardH, onPress }: { item: FeedItem; cardH: number; onP
 export default function StudioScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const cardH = Math.min(Math.floor(width * 0.80), 340);
+  const cardH = Math.min(Math.max(Math.floor(width * 0.62), 230), 292);
 
   const handlePress = useCallback((id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -91,10 +77,17 @@ export default function StudioScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.brandLabel}>ANVA AI</Text>
+            <View style={styles.brandRow}>
+              <Image
+                source={require('../../assets/brand/anva-mark.png')}
+                style={styles.brandMark}
+                resizeMode="contain"
+              />
+              <Text style={styles.brandLabel}>ANVA AI</Text>
+            </View>
             <Text style={styles.heroTitle}>Studio</Text>
             <Text style={styles.heroSub}>
-              Cinematic AI transformations.{'\n'}Curated templates. Studio quality.
+              Five curated Magic Hour looks.{'\n'}Choose a template and add your photo.
             </Text>
           </View>
           <TouchableOpacity style={styles.historyBtn} onPress={() => router.push('/history')}>
@@ -134,12 +127,14 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   headerLeft: { flex: 1, paddingRight: 12 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  brandMark: { width: 34, height: 34, borderRadius: 8 },
   brandLabel: {
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 3,
     color: Colors.brand.gold,
-    marginBottom: 4,
+    marginBottom: 0,
   },
   heroTitle: {
     fontSize: 44,
@@ -176,6 +171,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: Colors.bg.card,
   },
+  cardImage: { width: '100%', height: '100%' },
   typeBadge: {
     position: 'absolute',
     top: 14,

@@ -27,10 +27,6 @@ export default function RootLayout() {
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
         <Stack.Screen
-          name="result/[id]"
-          options={{ animation: 'slide_from_right', headerShown: false }}
-        />
-        <Stack.Screen
           name="auth/login"
           options={{ presentation: 'modal', headerShown: false }}
         />

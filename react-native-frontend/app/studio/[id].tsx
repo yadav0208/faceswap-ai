@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Image, Dimensions, Alert, ActivityIndicator, Platform, TextInput,
+  Image, Alert, ActivityIndicator, Platform, TextInput, useWindowDimensions,
+  ImageSourcePropType,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -11,15 +12,64 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { Colors, Radius } from '../../constants/theme';
-import { STUDIOS } from '../../constants/studios';
+import { getStudioImageSource, STUDIOS } from '../../constants/studios';
+import { API_BASE } from '../../services/api';
+import { saveCreation } from '../../services/savedCreations';
 
 // Gold accent constants
 const GOLD = Colors.brand.gold;
 const GOLD_LIGHT = Colors.brand.goldLight;
 const GOLD_DARK = Colors.brand.goldDark;
 
-const { width: SW } = Dimensions.get('window');
-const API = 'http://10.99.217.247:8000';
+const SIDE_PAD = 16;
+
+type PremiumTemplate = {
+  id: string;
+  label: string;
+  subtitle: string;
+  image: ImageSourcePropType;
+};
+
+// Original Anva templates. Every preview is the exact target image sent to
+// Magic Hour, so the result preserves the selected outfit, scene and lighting.
+const PREMIUM_TEMPLATES: PremiumTemplate[] = [
+  {
+    id: 'premium_formal',
+    label: 'Midnight Executive',
+    subtitle: 'Black tailoring · gold studio light',
+    image: require('../../assets/templates/anva-formal-v2.png'),
+  },
+  {
+    id: 'premium_birthday',
+    label: 'Royal Birthday',
+    subtitle: 'Purple couture · gold celebration',
+    image: require('../../assets/templates/anva-birthday-v2.png'),
+  },
+  {
+    id: 'premium_cyber',
+    label: 'Neon Future',
+    subtitle: 'Violet cyber fashion · blue rim light',
+    image: require('../../assets/templates/anva-cyber-v2.png'),
+  },
+  {
+    id: 'premium_fantasy',
+    label: 'Golden Warrior',
+    subtitle: 'Cinematic armor · castle atmosphere',
+    image: require('../../assets/templates/anva-fantasy-v2.png'),
+  },
+  {
+    id: 'premium_wedding',
+    label: 'Ivory Royal',
+    subtitle: 'Luxury wedding · warm floral bokeh',
+    image: require('../../assets/templates/anva-wedding-v2.png'),
+  },
+  {
+    id: 'premium_street',
+    label: 'Night City',
+    subtitle: 'Rainy editorial · violet and gold',
+    image: require('../../assets/templates/anva-street-v2.png'),
+  },
+];
 
 // Style options per tool — matches Fun With AI content
 const STYLES: Record<string, { id: string; label: string; imageUrl: string }[]> = {
@@ -138,10 +188,11 @@ const VIDEO_STUDIOS = new Set(['ai_videos', 'horse_riding', 'fantasy_armor', 'da
 const TEXT_TOOLS = new Set<string>([]); // reserved for future text-to-video
 
 export default function StudioScreen() {
+  const { width } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const studio = STUDIOS.find((s) => s.id === id);
-  const styleOptions = STYLES[id ?? ''] ?? [];
+  const styleOptions = PREMIUM_TEMPLATES;
 
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -167,7 +218,7 @@ export default function StudioScreen() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) { Alert.alert('Permission needed', 'Allow access to your photo library.'); return; }
     const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true, aspect: [3, 4], quality: 0.9,
     });
     if (!res.canceled) { setPhotoUri(res.assets[0].uri); setResultUri(null); }
@@ -182,7 +233,9 @@ export default function StudioScreen() {
   }
 
   async function generate() {
-    const ready = needsText ? textPrompt.trim().length > 0 : (photoUri && selectedStyle);
+    const ready = needsText
+      ? textPrompt.trim().length > 0
+      : !!photoUri && (styleOptions.length === 0 || !!selectedStyle);
     if (!ready) {
       Alert.alert('Almost there!', needsText
         ? 'Please enter a text prompt.'
@@ -206,7 +259,7 @@ export default function StudioScreen() {
       formData.append('gender', 'auto');
       formData.append('style_prompt', needsText ? textPrompt : `${studio!.title} ${selectedStyle} style`);
 
-      const resp = await fetch(`${API}/api/generate`, { method: 'POST', body: formData });
+      const resp = await fetch(`${API_BASE}/api/generate`, { method: 'POST', body: formData });
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
         throw new Error((err as any).detail || `Server error ${resp.status}`);
@@ -219,11 +272,11 @@ export default function StudioScreen() {
       const poll = async () => {
         tries++;
         try {
-          const s = await fetch(`${API}/api/generate/${data.id}/status`).then(r => r.json());
+          const s = await fetch(`${API_BASE}/api/generate/${data.id}/status`).then(r => r.json());
           setProgress(s.progress ?? 90);
           if (s.status === 'completed' && s.result_image_url) {
             setProgress(100);
-            setResultUri(`${API}${s.result_image_url}?t=${Date.now()}`);
+            setResultUri(`${API_BASE}${s.result_image_url}?t=${Date.now()}`);
             setGenerating(false);
           } else if (s.status === 'failed') {
             throw new Error(s.error_message || 'Generation failed');
@@ -242,13 +295,30 @@ export default function StudioScreen() {
     }
   }
 
-  const canGenerate = needsText ? textPrompt.trim().length > 0 : (!!photoUri && !!selectedStyle);
+  const canGenerate = needsText
+    ? textPrompt.trim().length > 0
+    : !!photoUri && (styleOptions.length === 0 || !!selectedStyle);
+
+  async function saveResult() {
+    if (!resultUri) return;
+    try {
+      const template = styleOptions.find((style) => style.id === selectedStyle);
+      await saveCreation({
+        uri: resultUri,
+        title: template?.label ?? studio!.title,
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert('Saved', 'Your image is now in My Studio.');
+    } catch {
+      Alert.alert('Could not save', 'Please try again.');
+    }
+  }
 
   return (
     <View style={styles.root}>
       {/* Hero */}
-      <View style={styles.hero}>
-        <Image source={{ uri: studio.imageUrl }} style={styles.heroImage} resizeMode="cover" />
+      <View style={[styles.hero, { width }]}>
+        <Image source={getStudioImageSource(studio.id)} style={styles.heroImage} resizeMode="cover" />
         <LinearGradient
           colors={['rgba(13,13,20,0)', 'rgba(13,13,20,0.55)', '#0D0D14']}
           locations={[0, 0.52, 1]}
@@ -342,7 +412,7 @@ export default function StudioScreen() {
                     style={[styles.styleCard, sel && styles.styleCardSel]}
                     activeOpacity={0.85}
                   >
-                    <Image source={{ uri: style.imageUrl }} style={styles.styleImg} resizeMode="cover" />
+                    <Image source={style.image} style={styles.styleImg} resizeMode="cover" />
                     <LinearGradient colors={['transparent', 'rgba(0,0,0,0.78)']} style={StyleSheet.absoluteFill} />
                     {sel && (
                       <LinearGradient
@@ -372,7 +442,7 @@ export default function StudioScreen() {
               <Image source={{ uri: resultUri }} style={styles.resultImg} resizeMode="cover" />
               <LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} style={styles.resultGradient} />
               <View style={styles.resultActions}>
-                <TouchableOpacity style={styles.resultBtn}>
+                <TouchableOpacity style={styles.resultBtn} onPress={saveResult}>
                   <Ionicons name="download-outline" size={19} color="#fff" />
                   <Text style={styles.resultBtnText}>Save</Text>
                 </TouchableOpacity>
@@ -433,19 +503,19 @@ export default function StudioScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.bg.primary },
   notFound: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.bg.primary },
-  hero: { width: SW, height: 240, position: 'relative' },
+  hero: { height: 240, position: 'relative', alignSelf: 'center' },
   heroImage: { width: '100%', height: '100%' },
   heroTopBar: {
     position: 'absolute', top: 0, left: 0, right: 0,
     flexDirection: 'row', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingTop: 6,
+    paddingHorizontal: SIDE_PAD, paddingTop: 6,
   },
   backBtn: {
     width: 38, height: 38, borderRadius: 19,
     backgroundColor: 'rgba(0,0,0,0.42)',
     alignItems: 'center', justifyContent: 'center',
   },
-  heroFooter: { position: 'absolute', bottom: 16, left: 16 },
+  heroFooter: { position: 'absolute', bottom: 16, left: SIDE_PAD, right: SIDE_PAD },
   iconBadge: {
     width: 38, height: 38, borderRadius: 19,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -453,9 +523,9 @@ const styles = StyleSheet.create({
     marginBottom: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
   },
   heroTitle: { fontSize: 26, fontWeight: '700', color: '#fff' },
-  heroSub: { fontSize: 13, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
+  heroSub: { fontSize: 13, color: 'rgba(255,255,255,0.65)', marginTop: 2, lineHeight: 19 },
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 20 },
+  scrollContent: { paddingHorizontal: SIDE_PAD, paddingTop: 20 },
   sectionLabel: {
     fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.5)',
     textTransform: 'uppercase', letterSpacing: 0.8,
@@ -483,7 +553,7 @@ const styles = StyleSheet.create({
   },
   uploadTitle: { fontSize: 13, fontWeight: '600', color: '#fff' },
   uploadHint: { fontSize: 11, color: 'rgba(255,255,255,0.38)' },
-  photoPreview: { flex: 2, height: 126, borderRadius: Radius.md, overflow: 'hidden' },
+  photoPreview: { flex: 1, height: 126, borderRadius: Radius.md, overflow: 'hidden' },
   previewImg: { width: '100%', height: '100%' },
   changeOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -491,15 +561,18 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', gap: 4,
   },
   changeText: { fontSize: 12, color: '#fff', fontWeight: '600' },
-  styleRow: { paddingBottom: 8, gap: 10 },
+  styleRow: { paddingBottom: 8, paddingRight: SIDE_PAD, gap: 10 },
   styleCard: {
     width: 108, height: 144, borderRadius: Radius.md,
     overflow: 'hidden', borderWidth: 2, borderColor: 'transparent',
     justifyContent: 'flex-end',
   },
   styleCardSel: { borderColor: GOLD },
-  styleImg: { ...StyleSheet.absoluteFillObject } as any,
-  styleLabel: { fontSize: 12, fontWeight: '600', color: '#fff', padding: 8, paddingBottom: 10 },
+  styleImg: { width: '100%', height: '100%' },
+  styleLabel: {
+    position: 'absolute', left: 0, right: 0, bottom: 0,
+    fontSize: 12, fontWeight: '600', color: '#fff', padding: 8, paddingBottom: 10,
+  },
   styleCheck: {
     position: 'absolute', top: 8, right: 8,
     width: 20, height: 20, borderRadius: 10,
@@ -524,7 +597,7 @@ const styles = StyleSheet.create({
   resultBtnText: { fontSize: 12, fontWeight: '600', color: '#fff' },
   ctaContainer: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 16,
+    paddingHorizontal: SIDE_PAD,
     paddingBottom: Platform.OS === 'ios' ? 34 : 20,
     paddingTop: 14, overflow: 'hidden',
   },

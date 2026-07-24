@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Image, useWindowDimensions, TextInput, Platform,
@@ -9,7 +9,11 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Colors, Radius } from '../../constants/theme';
-import { STUDIOS } from '../../constants/studios';
+import {
+  getStudioFallbackSource,
+  getStudioImageSource,
+  STUDIOS,
+} from '../../constants/studios';
 
 const CATEGORIES = ['All', 'Trending', 'AI Video', 'AI Photo', 'Occasions', 'Face Swap'];
 
@@ -21,6 +25,21 @@ const CATEGORY_MAP: Record<string, string> = {
   swap:     'Face Swap',
 };
 
+function StudioImage({ id }: { id: string }) {
+  const [useFallback, setUseFallback] = useState(false);
+
+  useEffect(() => setUseFallback(false), [id]);
+
+  return (
+    <Image
+      source={useFallback ? getStudioFallbackSource(id) : getStudioImageSource(id)}
+      style={styles.cardImage}
+      resizeMode="cover"
+      onError={() => setUseFallback(true)}
+    />
+  );
+}
+
 export default function ExploreScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
@@ -29,7 +48,8 @@ export default function ExploreScreen() {
 
   const SIDE_PAD = 16;
   const GAP = 10;
-  const cardW = (width - SIDE_PAD * 2 - GAP) / 2;
+  const availableWidth = Math.min(width, 720);
+  const cardW = (availableWidth - SIDE_PAD * 2 - GAP) / 2;
   const cardH = cardW * 1.42;
 
   const filtered = STUDIOS.filter((s) => {
@@ -80,6 +100,7 @@ export default function ExploreScreen() {
         {/* Category pills */}
         <ScrollView
           horizontal
+          style={styles.catScroll}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.catRow}
         >
@@ -99,7 +120,12 @@ export default function ExploreScreen() {
                     style={StyleSheet.absoluteFill}
                   />
                 )}
-                <Text style={[styles.catText, active && styles.catTextActive]}>{cat}</Text>
+                <Text
+                  allowFontScaling={false}
+                  style={[styles.catText, active && styles.catTextActive]}
+                >
+                  {cat}
+                </Text>
               </TouchableOpacity>
             );
           })}
@@ -119,7 +145,7 @@ export default function ExploreScreen() {
               <Text style={styles.emptyText}>No tools found</Text>
             </View>
           )}
-          <View style={styles.twoCol}>
+          <View style={[styles.twoCol, { maxWidth: availableWidth, alignSelf: 'center' }]}>
             {filtered.map((studio) => (
               <TouchableOpacity
                 key={studio.id}
@@ -130,11 +156,7 @@ export default function ExploreScreen() {
                 style={[styles.card, { width: cardW, height: cardH }]}
                 activeOpacity={0.88}
               >
-                <Image
-                  source={{ uri: studio.imageUrl }}
-                  style={StyleSheet.absoluteFillObject as any}
-                  resizeMode="cover"
-                />
+                <StudioImage id={studio.id} />
                 <LinearGradient
                   colors={['transparent', 'rgba(0,0,0,0.82)']}
                   locations={[0.38, 1]}
@@ -157,8 +179,8 @@ export default function ExploreScreen() {
                   </View>
                 )}
                 <View style={styles.cardFooter}>
-                  <Text style={styles.cardTitle}>{studio.title}</Text>
-                  <Text style={styles.cardSub}>{studio.subtitle}</Text>
+                  <Text style={styles.cardTitle} numberOfLines={2}>{studio.title}</Text>
+                  <Text style={styles.cardSub} numberOfLines={2}>{studio.subtitle}</Text>
                 </View>
               </TouchableOpacity>
             ))}
@@ -195,19 +217,38 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
   },
   searchInput: { flex: 1, fontSize: 14, color: '#fff' },
-  catRow: { paddingHorizontal: 16, gap: 8, paddingBottom: 14 },
+  catScroll: { flexGrow: 0, flexShrink: 0 },
+  catRow: {
+    paddingHorizontal: 16,
+    gap: 8,
+    paddingBottom: 14,
+    minHeight: 54,
+    alignItems: 'flex-start',
+  },
   catPill: {
-    paddingHorizontal: 18, paddingVertical: 9,
+    minHeight: 40,
+    minWidth: 72,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
     borderRadius: Radius.full,
     backgroundColor: Colors.bg.card,
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.09)', overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   catPillActive: { borderColor: 'transparent' },
-  catText: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.5)' },
+  catText: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.5)',
+    includeFontPadding: false,
+  },
   catTextActive: { color: '#000', fontWeight: '700' },
   grid: { paddingTop: 6 },
-  twoCol: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  twoCol: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   card: { borderRadius: Radius.lg, overflow: 'hidden', backgroundColor: Colors.bg.card },
+  cardImage: { width: '100%', height: '100%' },
   cardIconBadge: {
     width: 30, height: 30, borderRadius: 15,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -220,8 +261,8 @@ const styles = StyleSheet.create({
   },
   badgeText: { fontSize: 8, fontWeight: '800', color: '#fff' },
   cardFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12 },
-  cardTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 2 },
-  cardSub: { fontSize: 11, color: 'rgba(255,255,255,0.6)' },
+  cardTitle: { fontSize: 14, lineHeight: 18, fontWeight: '700', color: '#fff', marginBottom: 3 },
+  cardSub: { fontSize: 11, lineHeight: 15, color: 'rgba(255,255,255,0.6)' },
   empty: { flex: 1, alignItems: 'center', paddingTop: 60, gap: 12 },
   emptyText: { color: 'rgba(255,255,255,0.4)', fontSize: 15 },
 });

@@ -146,6 +146,15 @@ Copy `backend/.env` and set:
 | `SECRET_KEY` | change-me | JWT signing secret |
 | `USE_AI_MODELS` | false | Set true to enable Stable Diffusion (GPU only) |
 | `DEVICE` | cpu | cpu or cuda |
+| `GEMINI_API_KEY` | empty | Server-side Gemini key for prompt and image generation |
+| `GEMINI_TEXT_MODEL` | gemini-2.5-flash | Prompt enhancement model |
+| `GEMINI_IMAGE_MODEL` | gemini-2.5-flash-image | Nano Banana image model |
+| `IMAGE_PROVIDER` | magic_hour | `magic_hour`, `huggingface`, `gemini`, or `local` |
+| `HF_TOKEN` | empty | Free Hugging Face token with Inference Providers permission |
+| `HF_IMAGE_MODEL` | black-forest-labs/FLUX.1-schnell | Fast text-to-image model |
+| `FACE_SWAP_PROVIDER` | magic_hour | Managed face-swap provider; local blend is fallback |
+| `MAGIC_HOUR_API_KEY` | empty | Magic Hour free-credit API key |
+| `MAGIC_HOUR_IMAGE_MODEL` | flux-schnell | Prompt-to-image model |
 
 ---
 

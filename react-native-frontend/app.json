@@ -2,7 +2,7 @@
   "expo": {
     "name": "Anva AI",
     "slug": "anva-ai",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "updates": {
       "enabled": false
@@ -10,11 +10,11 @@
     "runtimeVersion": {
       "policy": "sdkVersion"
     },
-    "icon": "./assets/icon.png",
+    "icon": "./assets/anva-icon-v2.png",
     "userInterfaceStyle": "dark",
     "scheme": "anvaai",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/anva-splash-v2.png",
       "resizeMode": "contain",
       "backgroundColor": "#0A0A0A"
     },
@@ -29,7 +29,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/anva-adaptive-v2.png",
         "backgroundColor": "#0A0A0A"
       },
       "package": "com.anvaai.app",
@@ -37,7 +37,7 @@
     },
     "web": {
       "bundler": "metro",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/anva-favicon-v2.png"
     },
     "plugins": [
       "expo-router",

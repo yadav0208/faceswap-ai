@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView,
+  KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView, Image,
 } from 'react-native';
+import { API_BASE } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -22,7 +23,7 @@ export default function RegisterScreen() {
     }
     setLoading(true);
     try {
-      const res = await fetch('http://10.99.217.247:8000/api/auth/register', {
+      const res = await fetch(`${API_BASE}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -62,12 +63,11 @@ export default function RegisterScreen() {
           <Ionicons name="close" size={24} color="rgba(255,255,255,0.6)" />
         </TouchableOpacity>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <LinearGradient
-            colors={[Colors.brand.goldDark, Colors.brand.gold]}
+          <Image
+            source={require('../../assets/brand/anva-mark.png')}
             style={styles.logo}
-          >
-            <Ionicons name="sparkles" size={28} color="#000" />
-          </LinearGradient>
+            resizeMode="contain"
+          />
           <Text style={styles.brandLabel}>ANVA AI</Text>
           <Text style={styles.title}>Create account</Text>
           <Text style={styles.subtitle}>Join Anva AI today</Text>

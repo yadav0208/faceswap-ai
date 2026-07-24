@@ -28,7 +28,11 @@ function TabBarIcon({
         size={22}
         color={focused ? Colors.brand.gold : 'rgba(255,255,255,0.35)'}
       />
-      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>
+      <Text
+        allowFontScaling={false}
+        numberOfLines={1}
+        style={[styles.tabLabel, focused && styles.tabLabelActive]}
+      >
         {label}
       </Text>
     </View>
@@ -159,9 +163,11 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 10,
+    lineHeight: 13,
     fontWeight: '500',
     color: 'rgba(255,255,255,0.35)',
     marginTop: 1,
+    textAlign: 'center',
   },
   tabLabelActive: {
     color: Colors.brand.gold,

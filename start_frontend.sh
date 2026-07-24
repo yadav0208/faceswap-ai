@@ -21,10 +21,13 @@ if [ ! -d "node_modules" ]; then
 fi
 
 echo ""
-echo "🚀 Starting Expo dev server..."
+echo "🚀 Starting Expo dev server in tunnel mode..."
 echo ""
 echo "   Scan the QR code with Expo Go on your iPhone"
 echo "   Or press 'i' to open iOS simulator"
 echo ""
 
-npx expo start
+echo "   The app will be reachable through Expo's public tunnel."
+echo ""
+
+npx expo start --tunnel
