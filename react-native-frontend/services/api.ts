@@ -10,14 +10,11 @@ const isLocalWeb =
 // Local browser traffic goes directly to FastAPI; phones and Expo Go use the
 // configured public backend so the app is reachable outside localhost.
 //
-// After deploying to Railway:
-//   1. Go to Railway project → your service → Settings → Networking → copy the Public URL
-//   2. Replace 'https://your-app.up.railway.app' below with that URL
-//      OR set EXPO_PUBLIC_API_URL in your Expo environment.
+// Backend hosted on Railway — https://fortunate-empathy-production-9a66.up.railway.app
 export const API_BASE =
   isLocalWeb
     ? 'http://localhost:8000'
-    : (process.env.EXPO_PUBLIC_API_URL || 'https://your-app.up.railway.app').replace(/\/$/, '');
+    : (process.env.EXPO_PUBLIC_API_URL || 'https://fortunate-empathy-production-9a66.up.railway.app').replace(/\/$/, '');
 
 class ApiService {
   private client: AxiosInstance;
