@@ -36,10 +36,12 @@ async def lifespan(app: FastAPI):
     # Seed templates
     await seed_templates()
 
-    # Init AI models (non-blocking for CPU mode)
-    face_detector.initialize()
-    # Face swapping needs InsightFace independently of text-to-image settings.
-    image_processor.initialize()
+    # Init AI models — skip if USE_AI_MODELS is false (Railway/Magic Hour only mode)
+    if settings.USE_AI_MODELS:
+        face_detector.initialize()
+        image_processor.initialize()
+    else:
+        logger.info("USE_AI_MODELS=false — skipping local model initialization (Magic Hour mode)")
 
     logger.info("Backend ready!")
     yield
