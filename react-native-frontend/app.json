@@ -5,7 +5,15 @@
     "version": "1.0.1",
     "orientation": "portrait",
     "updates": {
-      "enabled": false
+      "enabled": true,
+      "url": "https://u.expo.dev/5662972b-9752-4edb-ba01-ff2fe08cdbe4"
+    },
+    "extra": {
+      "apiUrl": "https://fortunate-empathy-production-9a66.up.railway.app",
+      "eas": {
+        "projectId": "5662972b-9752-4edb-ba01-ff2fe08cdbe4"
+      },
+      "router": {}
     },
     "runtimeVersion": {
       "policy": "sdkVersion"
@@ -33,7 +41,16 @@
         "backgroundColor": "#0A0A0A"
       },
       "package": "com.anvaai.app",
-      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"]
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -58,6 +75,7 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "owner": "pankaj11raos-team"
   }
 }
