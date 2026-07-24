@@ -16,3 +16,5 @@ python-dotenv==1.0.1
 httpx==0.27.0
 requests==2.32.2
 magic-hour==0.72.0
+# huggingface_hub is imported at module level in huggingface_provider.py
+huggingface-hub==0.23.0

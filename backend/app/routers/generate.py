@@ -15,7 +15,6 @@ from app.config import settings
 from app.ai.image_processor import image_processor, VIDEO_STUDIOS
 from app.ai.face_detector import face_detector
 from app.ai.prompt_engine import build_generation_prompt, clean_prompt
-from app.ai.gemini_provider import gemini_provider
 import logging
 
 logger = logging.getLogger(__name__)
@@ -36,12 +35,16 @@ async def enhance_prompt(prompt: str = Form(...)):
     prompt = clean_prompt(prompt)
     if len(prompt) < 3:
         raise HTTPException(400, detail="Enter at least three characters.")
-    if gemini_provider.configured:
-        try:
-            enhanced = gemini_provider.enhance_prompt(prompt)
-            return {"prompt": enhanced, "provider": settings.GEMINI_TEXT_MODEL}
-        except Exception as exc:
-            logger.warning("Gemini prompt enhancement failed: %s", exc)
+    try:
+        from app.ai.gemini_provider import gemini_provider
+        if gemini_provider.configured:
+            try:
+                enhanced = gemini_provider.enhance_prompt(prompt)
+                return {"prompt": enhanced, "provider": settings.GEMINI_TEXT_MODEL}
+            except Exception as exc:
+                logger.warning("Gemini prompt enhancement failed: %s", exc)
+    except ImportError:
+        pass
     return {"prompt": _local_enhance_prompt(prompt), "provider": "Anva local enhancer"}
 
 

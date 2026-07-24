@@ -21,8 +21,6 @@ import logging
 import asyncio
 import urllib.request
 from app.config import settings
-from app.ai.gemini_provider import gemini_provider
-from app.ai.huggingface_provider import huggingface_provider
 from app.ai.magic_hour_provider import magic_hour_provider
 
 logger = logging.getLogger(__name__)
@@ -721,14 +719,22 @@ class ImageProcessor:
                 if settings.IMAGE_PROVIDER == "magic_hour":
                     return magic_hour_provider.generate_image(style_prompt, output_path)
                 if settings.IMAGE_PROVIDER == "huggingface":
-                    return huggingface_provider.generate_image(style_prompt, output_path)
+                    try:
+                        from app.ai.huggingface_provider import huggingface_provider
+                        return huggingface_provider.generate_image(style_prompt, output_path)
+                    except ImportError:
+                        return False, "HuggingFace provider not available in this deployment."
                 if settings.IMAGE_PROVIDER == "gemini":
-                    if not gemini_provider.configured:
-                        return False, (
-                            "Image generation is not configured. Add GEMINI_API_KEY to backend/.env "
-                            "and enable image API billing, or set IMAGE_PROVIDER=local."
-                        )
-                    return gemini_provider.generate_image(style_prompt, output_path)
+                    try:
+                        from app.ai.gemini_provider import gemini_provider
+                        if not gemini_provider.configured:
+                            return False, (
+                                "Image generation is not configured. Add GEMINI_API_KEY to backend/.env "
+                                "and enable image API billing, or set IMAGE_PROVIDER=local."
+                            )
+                        return gemini_provider.generate_image(style_prompt, output_path)
+                    except ImportError:
+                        return False, "Gemini provider not available in this deployment."
                 ai_result = self._generate_ai_image(style_prompt, output_path)
                 if ai_result is not None:
                     return ai_result

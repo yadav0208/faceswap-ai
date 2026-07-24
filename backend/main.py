@@ -9,8 +9,6 @@ from app.database import init_db
 from app.seed import seed_templates
 from app.ai.image_processor import image_processor
 from app.ai.face_detector import face_detector
-from app.ai.gemini_provider import gemini_provider
-from app.ai.huggingface_provider import huggingface_provider
 from app.ai.magic_hour_provider import magic_hour_provider
 from app.routers import auth, poses, generate
 
@@ -79,16 +77,7 @@ async def health():
         "app": settings.APP_NAME,
         "ai_enabled": settings.USE_AI_MODELS,
         "image_provider": settings.IMAGE_PROVIDER,
-        "provider_configured": (
-            magic_hour_provider.configured
-            if settings.IMAGE_PROVIDER == "magic_hour"
-            else huggingface_provider.configured
-            if settings.IMAGE_PROVIDER == "huggingface"
-            else gemini_provider.configured
-            if settings.IMAGE_PROVIDER == "gemini"
-            else settings.USE_AI_MODELS
-        ),
-        "gemini_configured": gemini_provider.configured,
+        "provider_configured": magic_hour_provider.configured,
         "face_swap_provider": settings.FACE_SWAP_PROVIDER,
         "face_swap_configured": magic_hour_provider.configured,
         "device": settings.DEVICE,
