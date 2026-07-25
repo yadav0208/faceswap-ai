@@ -3,12 +3,9 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.database import init_db
 from app.seed import seed_templates
-from app.ai.image_processor import image_processor
-from app.ai.face_detector import face_detector
 from app.ai.magic_hour_provider import magic_hour_provider
 from app.routers import auth, poses, generate
 
@@ -22,29 +19,25 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    logger.info("Starting Fun With AI backend...")
+    logger.info("Starting Anva AI backend...")
+    try:
+        # Create required directories
+        for d in [settings.UPLOAD_DIR, settings.OUTPUT_DIR, settings.POSE_TEMPLATES_DIR]:
+            os.makedirs(d, exist_ok=True)
+            logger.info(f"Directory ready: {d}")
 
-    # Create required directories
-    for d in [settings.UPLOAD_DIR, settings.OUTPUT_DIR, settings.POSE_TEMPLATES_DIR]:
-        os.makedirs(d, exist_ok=True)
+        # Init DB
+        await init_db()
+        logger.info("Database initialized")
 
-    # Init DB
-    await init_db()
+        # Seed templates
+        await seed_templates()
+        logger.info("Templates seeded")
 
-    # Seed templates
-    await seed_templates()
-
-    # Init AI models — skip if USE_AI_MODELS is false (Railway/Magic Hour only mode)
-    if settings.USE_AI_MODELS:
-        face_detector.initialize()
-        image_processor.initialize()
-    else:
-        logger.info("USE_AI_MODELS=false — skipping local model initialization (Magic Hour mode)")
-
-    logger.info("Backend ready!")
+        logger.info("Backend ready! Magic Hour configured: %s", magic_hour_provider.configured)
+    except Exception as e:
+        logger.error("Startup error: %s", e, exc_info=True)
     yield
-
-    # Shutdown
     logger.info("Shutting down...")
 
 
