@@ -10,11 +10,11 @@ const isLocalWeb =
 // Local browser traffic goes directly to FastAPI; phones and Expo Go use the
 // configured public backend so the app is reachable outside localhost.
 //
-// Backend hosted on Railway — https://fortunate-empathy-production-9a66.up.railway.app
+// Backend hosted on Railway — https://fortunate-empathy-production-07c6.up.railway.app
 export const API_BASE =
   isLocalWeb
     ? 'http://localhost:8000'
-    : (process.env.EXPO_PUBLIC_API_URL || 'https://fortunate-empathy-production-9a66.up.railway.app').replace(/\/$/, '');
+    : (process.env.EXPO_PUBLIC_API_URL || 'https://fortunate-empathy-production-07c6.up.railway.app').replace(/\/$/, '');
 
 class ApiService {
   private client: AxiosInstance;

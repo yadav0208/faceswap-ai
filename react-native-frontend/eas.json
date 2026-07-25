@@ -8,21 +8,23 @@
       "distribution": "internal"
     },
     "preview": {
+      "channel": "main",
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease"
       },
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://fortunate-empathy-production-9a66.up.railway.app"
+        "EXPO_PUBLIC_API_URL": "https://fortunate-empathy-production-07c6.up.railway.app"
       }
     },
     "production": {
+      "channel": "main",
       "android": {
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://fortunate-empathy-production-9a66.up.railway.app"
+        "EXPO_PUBLIC_API_URL": "https://fortunate-empathy-production-07c6.up.railway.app"
       }
     }
   },
