@@ -18,5 +18,5 @@ COPY . .
 # Create runtime directories
 RUN mkdir -p uploads outputs pose_templates/cached_photos pose_templates/premium
 
-# Railway injects $PORT — bind to it
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Railway injects $PORT (default 8080) — bind to it
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
