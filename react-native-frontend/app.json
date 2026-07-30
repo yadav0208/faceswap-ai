@@ -69,7 +69,7 @@
       [
         "expo-media-library",
         {
-          "photosPermission": "Allow Anva AI to save photos."
+          "photosPermission": "Allow Anva AI to save generated photos and videos."
         }
       ]
     ],

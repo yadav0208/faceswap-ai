@@ -19,6 +19,46 @@ class User(Base):
 
     generations = relationship("Generation", back_populates="user", lazy="select")
     saved_looks = relationship("SavedLook", back_populates="user", lazy="select")
+    phone_identity = relationship(
+        "PhoneIdentity", back_populates="user", uselist=False, lazy="select"
+    )
+
+
+class PhoneIdentity(Base):
+    __tablename__ = "phone_identities"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    phone_number = Column(String(20), unique=True, index=True, nullable=False)
+    verified_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    user = relationship("User", back_populates="phone_identity")
+
+
+class PhoneOtp(Base):
+    __tablename__ = "phone_otps"
+
+    id = Column(Integer, primary_key=True)
+    phone_number = Column(String(20), index=True, nullable=False)
+    purpose = Column(String(20), default="login", nullable=False)
+    code_hash = Column(String(200), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    attempts = Column(Integer, default=0, nullable=False)
+    consumed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class PasswordResetCode(Base):
+    __tablename__ = "password_reset_codes"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    code_hash = Column(String(200), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    attempts = Column(Integer, default=0, nullable=False)
+    consumed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 class PoseTemplate(Base):

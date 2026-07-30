@@ -7,7 +7,7 @@ export type SavedCreation = {
   uri: string;
   title: string;
   createdAt: string;
-  type: 'photo';
+  type: 'photo' | 'video';
 };
 
 export async function getSavedCreations(): Promise<SavedCreation[]> {
@@ -23,7 +23,7 @@ export async function getSavedCreations(): Promise<SavedCreation[]> {
 }
 
 export async function saveCreation(
-  creation: Omit<SavedCreation, 'id' | 'createdAt' | 'type'>,
+  creation: Omit<SavedCreation, 'id' | 'createdAt'>,
 ): Promise<SavedCreation> {
   const current = await getSavedCreations();
   const existing = current.find((item) => item.uri === creation.uri);
@@ -33,7 +33,6 @@ export async function saveCreation(
     ...creation,
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     createdAt: new Date().toISOString(),
-    type: 'photo',
   };
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([item, ...current]));
   return item;

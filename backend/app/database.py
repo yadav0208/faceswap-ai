@@ -2,7 +2,10 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import DeclarativeBase
 from app.config import settings
 
-engine = create_async_engine(settings.DATABASE_URL, echo=False)
+engine_options = {"echo": False, "pool_pre_ping": True}
+if not settings.DATABASE_URL.startswith("sqlite"):
+    engine_options.update({"pool_recycle": 1800})
+engine = create_async_engine(settings.async_database_url, **engine_options)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 

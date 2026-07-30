@@ -1,7 +1,4 @@
-"""
-Face detection — uses InsightFace buffalo_l (same model as the swap pipeline).
-Falls back to a permissive pass-through so uploads are never wrongly rejected.
-"""
+"""Lightweight OpenCV face detection with a permissive upload fallback."""
 import cv2
 import numpy as np
 from typing import Dict, Any, Optional
@@ -19,12 +16,13 @@ class FaceDetector:
         if self._initialized:
             return
         try:
-            from insightface.app import FaceAnalysis
-            self._app = FaceAnalysis(name="buffalo_l", providers=["CPUExecutionProvider"])
-            self._app.prepare(ctx_id=0, det_size=(640, 640))
-            logger.info("FaceDetector: InsightFace buffalo_l ready")
+            cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+            self._app = cv2.CascadeClassifier(cascade_path)
+            if self._app.empty():
+                raise RuntimeError("OpenCV face cascade is unavailable")
+            logger.info("FaceDetector: OpenCV cascade ready")
         except Exception as e:
-            logger.warning(f"FaceDetector: InsightFace unavailable ({e}) — using permissive mode")
+            logger.warning(f"FaceDetector: OpenCV cascade unavailable ({e}) — using permissive mode")
             self._app = None
         self._initialized = True
 
@@ -43,15 +41,15 @@ class FaceDetector:
             if img is None:
                 return {"detected": False, "error": "Cannot read image file"}
 
-            # ── InsightFace detection (best accuracy) ──────────────────────
             if self._app is not None:
-                faces = self._app.get(img)
-                if faces:
-                    face = max(faces, key=lambda f: (f.bbox[2]-f.bbox[0]) * (f.bbox[3]-f.bbox[1]))
-                    bbox = face.bbox.astype(int)
+                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                faces = self._app.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=4, minSize=(60, 60))
+                if len(faces):
+                    x, y, w, h = max(faces, key=lambda face: face[2] * face[3])
+                    bbox = np.array([x, y, x + w, y + h])
                     return {
                         "detected": True,
-                        "confidence": float(face.det_score) if hasattr(face, "det_score") else 0.9,
+                        "confidence": 0.8,
                         "bbox": {
                             "x": int(bbox[0]), "y": int(bbox[1]),
                             "w": int(bbox[2] - bbox[0]), "h": int(bbox[3] - bbox[1]),
@@ -60,11 +58,9 @@ class FaceDetector:
                     }
                 else:
                     # InsightFace ran but found nothing — image likely has no clear face
-                    logger.info(f"No face detected by InsightFace in {image_path}")
+                    logger.info(f"No clear face detected in {image_path}")
                     return {"detected": False, "confidence": 0.0}
 
-            # ── Permissive fallback (InsightFace not available) ────────────
-            # Let the upload through; swap pipeline will handle it
             logger.warning("FaceDetector running in permissive mode — skipping gate check")
             return {"detected": True, "confidence": 0.5, "bbox": None}
 

@@ -1,46 +1,75 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  useWindowDimensions, Platform, Image, StatusBar, ImageSourcePropType,
+  Platform, Image, StatusBar, ImageSourcePropType, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image as ExpoImage } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { Colors, Radius } from '../../constants/theme';
 
 const SIDE_PAD = 16;
 
-// The five curated target templates used by the Magic Hour face-swap flow.
-const FEED_ITEMS = [
-  { id: 'ai_portrait', type: 'MAGIC HOUR' as const, title: 'Midnight Executive',
+type FeedItem = {
+  id: string;
+  studioId: string;
+  type: 'ANVA AI' | 'BEFORE / AFTER';
+  title: string;
+  subtitle: string;
+  image: ImageSourcePropType;
+  animated?: boolean;
+  params?: Record<string, string>;
+};
+
+const FEED_ITEMS: FeedItem[] = [
+  { id: 'ai_portrait', studioId: 'ai_portrait', type: 'ANVA AI', title: 'Midnight Executive',
     subtitle: 'Black tailoring · gold studio light',
     image: require('../../assets/templates/anva-formal-v2.png') as ImageSourcePropType },
-  { id: 'birthday', type: 'MAGIC HOUR' as const, title: 'Royal Birthday',
+  { id: 'birthday', studioId: 'birthday', type: 'ANVA AI', title: 'Royal Birthday',
     subtitle: 'Purple couture · gold celebration',
     image: require('../../assets/templates/anva-birthday-v2.png') as ImageSourcePropType },
-  { id: 'futuristic_2026', type: 'MAGIC HOUR' as const, title: 'Neon Future',
+  { id: 'futuristic_2026', studioId: 'futuristic_2026', type: 'ANVA AI', title: 'Neon Future',
     subtitle: 'Violet cyber fashion · blue rim light',
     image: require('../../assets/templates/anva-cyber-v2.png') as ImageSourcePropType },
-  { id: 'fantasy_armor', type: 'MAGIC HOUR' as const, title: 'Golden Warrior',
+  { id: 'fantasy_armor', studioId: 'fantasy_armor', type: 'ANVA AI', title: 'Golden Warrior',
     subtitle: 'Cinematic armor · castle atmosphere',
     image: require('../../assets/templates/anva-fantasy-v2.png') as ImageSourcePropType },
-  { id: 'wedding_look', type: 'MAGIC HOUR' as const, title: 'Ivory Royal',
+  { id: 'wedding_look', studioId: 'wedding_look', type: 'ANVA AI', title: 'Ivory Royal',
     subtitle: 'Luxury wedding · warm floral bokeh',
     image: require('../../assets/templates/anva-wedding-v2.png') as ImageSourcePropType },
+  { id: 'effect_executive', studioId: 'ai_portrait', type: 'BEFORE / AFTER', title: 'Executive Transform',
+    subtitle: 'Casual portrait → premium studio look',
+    image: require('../../assets/templates/effects/executive-transform.gif') as ImageSourcePropType,
+    animated: true,
+    params: { gender: 'male', style: 'premium_effect_executive', effectPreview: 'executive', templateName: 'Executive Transform' } },
+  { id: 'effect_neon', studioId: 'futuristic_2026', type: 'BEFORE / AFTER', title: 'Neon Transform',
+    subtitle: 'Natural portrait → neon future style',
+    image: require('../../assets/templates/effects/neon-transform.gif') as ImageSourcePropType,
+    animated: true,
+    params: { gender: 'female', style: 'premium_effect_neon', effectPreview: 'neon', templateName: 'Neon Transform' } },
+  { id: 'effect_festival', studioId: 'birthday', type: 'BEFORE / AFTER', title: 'Festival Transform',
+    subtitle: 'Everyday photo → Raksha Bandhan celebration',
+    image: require('../../assets/templates/effects/festival-transform.gif') as ImageSourcePropType,
+    animated: true,
+    params: { gender: 'male', style: 'premium_festival_kid', effectPreview: 'festival', templateName: 'Festival Transform', audience: 'kids' } },
 ];
 
-type FeedItem = typeof FEED_ITEMS[0];
-
-function FeedCard({ item, cardH, onPress }: { item: FeedItem; cardH: number; onPress: () => void }) {
+function FeedCard({ item, onPress }: { item: FeedItem; onPress: () => void }) {
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.92}
-      style={[styles.card, { height: cardH }]}
+      style={styles.card}
     >
-      <Image source={item.image} style={styles.cardImage} resizeMode="cover" />
+      <ExpoImage
+        source={item.image}
+        style={styles.cardImage}
+        contentFit="cover"
+        autoplay={item.animated}
+      />
       <LinearGradient
         colors={['rgba(0,0,0,0.0)', 'rgba(0,0,0,0.30)', 'rgba(0,0,0,0.80)']}
         locations={[0.2, 0.55, 1]}
@@ -48,7 +77,7 @@ function FeedCard({ item, cardH, onPress }: { item: FeedItem; cardH: number; onP
       />
       {/* Type badge */}
       <View style={[styles.typeBadge, styles.badgeImage]}>
-        <Ionicons name="sparkles" size={10} color="#fff" />
+        <Ionicons name={item.animated ? 'repeat' : 'sparkles'} size={10} color="#fff" />
         <Text style={styles.badgeText}>{item.type}</Text>
       </View>
       {/* Content */}
@@ -62,12 +91,14 @@ function FeedCard({ item, cardH, onPress }: { item: FeedItem; cardH: number; onP
 
 export default function StudioScreen() {
   const router = useRouter();
-  const { width } = useWindowDimensions();
-  const cardH = Math.min(Math.max(Math.floor(width * 0.62), 230), 292);
+  const [preview, setPreview] = useState<FeedItem | null>(null);
 
-  const handlePress = useCallback((id: string) => {
+  const handlePress = useCallback((item: FeedItem) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push(`/studio/${id}`);
+    router.push({
+      pathname: '/studio/[id]',
+      params: { id: item.studioId, ...item.params },
+    });
   }, [router]);
 
   return (
@@ -87,7 +118,7 @@ export default function StudioScreen() {
             </View>
             <Text style={styles.heroTitle}>Studio</Text>
             <Text style={styles.heroSub}>
-              Five curated Magic Hour looks.{'\n'}Choose a template and add your photo.
+              Image and animated effect templates.{'\n'}See before and after, then add your photo.
             </Text>
           </View>
           <TouchableOpacity style={styles.historyBtn} onPress={() => router.push('/history')}>
@@ -98,17 +129,63 @@ export default function StudioScreen() {
         {/* Feed list */}
         <FlatList
           data={FEED_ITEMS}
+          numColumns={2}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
+          columnWrapperStyle={styles.feedRow}
           contentContainerStyle={[
             styles.feedContent,
             { paddingBottom: Platform.OS === 'ios' ? 110 : 90 },
           ]}
-          ItemSeparatorComponent={() => <View style={{ height: 14 }} />}
+          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           renderItem={({ item }) => (
-            <FeedCard item={item} cardH={cardH} onPress={() => handlePress(item.id)} />
+            <FeedCard
+              item={item}
+              onPress={() => item.animated ? setPreview(item) : handlePress(item)}
+            />
           )}
         />
+        <Modal
+          visible={preview !== null}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setPreview(null)}
+        >
+          <View style={styles.previewShade}>
+            <View style={styles.previewCard}>
+              <View style={styles.previewHeader}>
+                <View>
+                  <Text style={styles.previewEyebrow}>BEFORE → AFTER</Text>
+                  <Text style={styles.previewTitle}>{preview?.title}</Text>
+                </View>
+                <TouchableOpacity style={styles.previewClose} onPress={() => setPreview(null)}>
+                  <Ionicons name="close" size={20} color="#fff" />
+                </TouchableOpacity>
+              </View>
+              {preview && (
+                <ExpoImage
+                  source={preview.image}
+                  style={styles.previewGif}
+                  contentFit="cover"
+                  autoplay
+                />
+              )}
+              <Text style={styles.previewDescription}>{preview?.subtitle}</Text>
+              <TouchableOpacity
+                style={styles.useTemplate}
+                onPress={() => {
+                  if (!preview) return;
+                  const selected = preview;
+                  setPreview(null);
+                  handlePress(selected);
+                }}
+              >
+                <Ionicons name="sparkles" size={17} color="#090909" />
+                <Text style={styles.useTemplateText}>Use this template</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </View>
   );
@@ -164,9 +241,13 @@ const styles = StyleSheet.create({
   feedContent: {
     paddingHorizontal: SIDE_PAD,
   },
+  feedRow: {
+    gap: 10,
+  },
 
   card: {
-    width: '100%',
+    width: '48.5%',
+    aspectRatio: 0.704,
     borderRadius: Radius.lg,
     overflow: 'hidden',
     backgroundColor: Colors.bg.card,
@@ -210,4 +291,38 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.68)',
     lineHeight: 20,
   },
+  previewShade: {
+    flex: 1, padding: 20, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.82)',
+  },
+  previewCard: {
+    width: '100%', maxWidth: 430, padding: 14, borderRadius: Radius.lg,
+    backgroundColor: '#151515', borderWidth: 1, borderColor: Colors.border.gold,
+  },
+  previewHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    padding: 4, marginBottom: 12,
+  },
+  previewEyebrow: {
+    color: Colors.brand.gold, fontSize: 9, fontWeight: '900', letterSpacing: 1.4,
+  },
+  previewTitle: { color: '#fff', fontSize: 20, fontWeight: '800', marginTop: 3 },
+  previewClose: {
+    width: 36, height: 36, borderRadius: 18, alignItems: 'center',
+    justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  previewGif: {
+    width: '100%', aspectRatio: 0.704, borderRadius: Radius.md,
+    overflow: 'hidden', backgroundColor: Colors.bg.card,
+  },
+  previewDescription: {
+    color: 'rgba(255,255,255,0.62)', fontSize: 12, lineHeight: 18,
+    marginVertical: 12,
+  },
+  useTemplate: {
+    height: 50, borderRadius: Radius.full, flexDirection: 'row',
+    alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: Colors.brand.gold,
+  },
+  useTemplateText: { color: '#090909', fontSize: 14, fontWeight: '900' },
 });

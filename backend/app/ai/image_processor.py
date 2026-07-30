@@ -19,7 +19,6 @@ from pathlib import Path
 from typing import Optional, Tuple
 import logging
 import asyncio
-import urllib.request
 from app.config import settings
 from app.ai.magic_hour_provider import magic_hour_provider
 
@@ -31,10 +30,9 @@ VIDEO_STUDIOS = {
     "horse_riding", "fantasy_armor", "stadium_cam",
     "kids_cartoon", "kids_superhero",
     "kids_fairy_tale", "kids_space", "kids_dinosaur", "kids_underwater",
+    "kids_text_video",
 }
 
-_CACHE_DIR = Path("pose_templates/cached_photos")
-_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 _PREMIUM_TEMPLATE_DIR = Path("pose_templates/premium")
 
 PREMIUM_TEMPLATE_FILES: dict[str, str] = {
@@ -44,93 +42,33 @@ PREMIUM_TEMPLATE_FILES: dict[str, str] = {
     "premium_fantasy": "premium-fantasy.png",
     "premium_wedding": "premium-wedding.png",
     "premium_street": "premium-street.png",
+    "premium_festival_kid": "premium-festival-kid.png",
+    "premium_effect_executive": "premium-effect-executive.png",
+    "premium_effect_neon": "premium-effect-neon.png",
+}
+
+PREMIUM_TEMPLATE_GENDERS = {
+    "premium_formal": "male",
+    "premium_birthday": "female",
+    "premium_cyber": "female",
+    "premium_fantasy": "male",
+    "premium_wedding": "female",
+    "premium_street": "male",
+    "premium_festival_kid": "male",
+    "premium_effect_executive": "male",
+    "premium_effect_neon": "female",
+}
+
+MOTION_PROMPTS = {
+    "motion_subtle": "Natural portrait motion, gentle blinking and breathing, very subtle head movement, locked camera",
+    "motion_cinematic": "Slow cinematic push-in, natural blinking, slight head turn, realistic hair and clothing movement",
+    "motion_confident": "Confident small head turn toward camera, natural blink, subtle shoulder movement, editorial lighting",
+    "motion_smile": "Expression gradually changes into a warm natural smile, gentle blink and breathing, stable camera",
+    "motion_wind": "Soft breeze moves hair and clothing naturally, subtle breathing and blinking, cinematic depth",
+    "motion_orbit": "Very slow camera orbit with realistic parallax, subject remains looking toward camera, natural micro movement",
 }
 
 # ── Target photo URLs keyed by studio_id_pose_id ─────────────────────────────
-POSE_PHOTO_URLS: dict[str, str] = {
-    "face_swap_photo":    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
-    "face_swap_celeb":    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "face_swap_movie":    "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
-    "face_swap_cartoon":  "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=512&h=768&fit=crop&crop=faces&q=90",
-    "ai_portrait_studio": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
-    "ai_portrait_outdoor":"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "ai_portrait_linkedin":"https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=512&h=768&fit=crop&crop=faces&q=90",
-    "ai_portrait_creative":"https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "photo_styles_retro_1996": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
-    "photo_styles_future_2026":"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "photo_styles_film_noir":  "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
-    "photo_styles_polaroid":   "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
-    "anime_style_manga":   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
-    "anime_style_ghibli":  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "anime_style_chibi":   "https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=512&h=768&fit=crop&crop=faces&q=90",
-    "anime_style_cyberpunk":"https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
-    "birthday_bday_queen": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
-    "birthday_bday_pink":  "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
-    "birthday_bday_candles":"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "birthday_bday_outdoor":"https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "stadium_cam_football": "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=512&h=768&fit=crop&q=90",
-    "stadium_cam_concert":  "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
-    "stadium_cam_basketball":"https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=512&h=768&fit=crop&q=90",
-    "stadium_cam_fan_zone": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
-    "horse_riding_snow":    "https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?w=512&h=768&fit=crop&q=90",
-    "horse_riding_beach":   "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "horse_riding_forest":  "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
-    "horse_riding_meadow":  "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "fantasy_armor_knight": "https://images.unsplash.com/photo-1535666669445-e8c15cd2e7d9?w=512&h=768&fit=crop&q=90",
-    "fantasy_armor_warrior":"https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
-    "fantasy_armor_elf":    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "fantasy_armor_mage":   "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
-    "dance_video_hiphop":   "https://images.unsplash.com/photo-1547153760-18fc86324498?w=512&h=768&fit=crop&q=90",
-    "dance_video_salsa":    "https://images.unsplash.com/photo-1504609813442-a8924e83f76e?w=512&h=768&fit=crop&q=90",
-    "dance_video_kpop":     "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
-    "dance_video_viral":    "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
-    "talking_photo_natural":"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
-    "talking_photo_laugh":  "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
-    "talking_photo_sing":   "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "talking_photo_wink":   "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "retro_1996_bw":        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
-    "retro_1996_sepia":     "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
-    "retro_1996_vhs":       "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "retro_1996_grunge":    "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
-    "futuristic_2026_neon": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
-    "futuristic_2026_cyber":"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "futuristic_2026_ai_art":"https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "futuristic_2026_glitch":"https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
-    "wedding_look_bride":   "https://images.unsplash.com/photo-1519741497674-611481863552?w=512&h=768&fit=crop&q=90",
-    "wedding_look_groom":   "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "wedding_look_couple":  "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
-    "wedding_look_aisle":   "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
-    "graduation_cap":       "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=512&h=768&fit=crop&q=90",
-    "graduation_outdoor":   "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "graduation_party":     "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "graduation_formal":    "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
-    "birthday_queen_crown": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
-    "birthday_queen_floral":"https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
-    "birthday_queen_glam":  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "birthday_queen_casual":"https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "outfit_tryon_casual":  "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=512&h=768&fit=crop&q=90",
-    "outfit_tryon_formal":  "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=512&h=768&fit=crop&q=90",
-    "outfit_tryon_sport":   "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "outfit_tryon_party":   "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
-    "age_filter_young":     "https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=512&h=768&fit=crop&crop=faces&q=90",
-    "age_filter_old":       "https://images.unsplash.com/photo-1601576084861-5de423553c0f?w=512&h=768&fit=crop&crop=faces&q=90",
-    "age_filter_teen":      "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=512&h=768&fit=crop&crop=faces&q=90",
-    "age_filter_elder":     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
-    "kids_cartoon_superhero":"https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=512&h=768&fit=crop&crop=faces&q=90",
-    "kids_cartoon_anime":   "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "kids_cartoon_fairy":   "https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=512&h=768&fit=crop&crop=faces&q=90",
-    "kids_superhero_marvel":"https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
-    "kids_superhero_dc":    "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
-    "kids_fairy_tale_princess":"https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=512&h=768&fit=crop&crop=faces&q=90",
-    "kids_fairy_tale_knight":"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
-    "kids_space_astronaut": "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=512&h=768&fit=crop&q=90",
-    "kids_space_alien":     "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
-    "ai_videos_collage":    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=768&fit=crop&crop=faces&q=90",
-    "ai_videos_cinematic":  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=768&fit=crop&crop=faces&q=90",
-    "ai_videos_fantasy":    "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=512&h=768&fit=crop&crop=faces&q=90",
-    "ai_videos_dance":      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=512&h=768&fit=crop&crop=faces&q=90",
-}
-
 
 # ── Style → filter name mapping ───────────────────────────────────────────────
 STYLE_MAP: dict[str, str] = {
@@ -553,6 +491,7 @@ def generate_prompt_image(prompt: str, output_path: str, size=(512, 768)) -> Tup
 # ── Pose-photo downloader ─────────────────────────────────────────────────────
 
 def _download_pose_photo(studio_id: str, pose_id: str) -> Optional[str]:
+    """Resolve a bundled Anva template; remote stock-photo fallbacks are unsupported."""
     premium_file = PREMIUM_TEMPLATE_FILES.get(pose_id)
     if premium_file:
         local_template = _PREMIUM_TEMPLATE_DIR / premium_file
@@ -561,29 +500,7 @@ def _download_pose_photo(studio_id: str, pose_id: str) -> Optional[str]:
         logger.error("Premium template is missing: %s", local_template)
         return None
 
-    key = f"{studio_id}_{pose_id}"
-    cached = _CACHE_DIR / f"{key}.jpg"
-    if cached.exists():
-        return str(cached)
-    url = POSE_PHOTO_URLS.get(key)
-    if not url:
-        # fallback: first matching studio
-        for k, v in POSE_PHOTO_URLS.items():
-            if k.startswith(studio_id + "_"):
-                url = v
-                break
-    if not url:
-        return None
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            data = resp.read()
-        cached.write_bytes(data)
-        logger.info(f"Cached pose photo: {key}")
-        return str(cached)
-    except Exception as e:
-        logger.warning(f"Download failed {key}: {e}")
-        return None
+    return None
 
 
 # ── Geometry helpers ──────────────────────────────────────────────────────────
@@ -618,72 +535,7 @@ def _estimate_kps(cx: int, cy: int, half_w: int) -> np.ndarray:
 
 class ImageProcessor:
     def __init__(self):
-        self._app = None
-        self._swapper = None
-        self._ready = False
-        self._image_pipeline = None
-        self._image_pipeline_failed = False
-
-    def _generate_ai_image(self, prompt: str, output_path: str):
-        """Generate with Diffusers when configured; fail softly to the local renderer."""
-        if not settings.USE_AI_MODELS or self._image_pipeline_failed:
-            return None
-        try:
-            if self._image_pipeline is None:
-                import torch
-                from diffusers import StableDiffusionPipeline
-
-                dtype = torch.float16 if settings.DEVICE.startswith("cuda") else torch.float32
-                logger.info("Loading image model %s on %s", settings.IMAGE_MODEL_ID, settings.DEVICE)
-                self._image_pipeline = StableDiffusionPipeline.from_pretrained(
-                    settings.IMAGE_MODEL_ID,
-                    torch_dtype=dtype,
-                    token=settings.HF_TOKEN,
-                    safety_checker=None,
-                )
-                self._image_pipeline.to(settings.DEVICE)
-                if settings.DEVICE == "cpu":
-                    self._image_pipeline.enable_attention_slicing()
-
-            negative = (
-                "blurry, low quality, distorted, disfigured, duplicate, extra limbs, "
-                "bad hands, bad anatomy, text, watermark, logo"
-            )
-            image = self._image_pipeline(
-                prompt=prompt,
-                negative_prompt=negative,
-                width=settings.IMAGE_WIDTH,
-                height=settings.IMAGE_HEIGHT,
-                num_inference_steps=settings.IMAGE_STEPS,
-                guidance_scale=7.5,
-            ).images[0]
-            Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-            image.save(output_path, quality=95)
-            return True, None
-        except Exception as exc:
-            self._image_pipeline_failed = True
-            logger.warning("AI image model unavailable; using local fallback: %s", exc)
-            return None
-
-    def initialize(self):
-        try:
-            from insightface.app import FaceAnalysis
-            import insightface
-            logger.info("Loading InsightFace buffalo_l …")
-            self._app = FaceAnalysis(name="buffalo_l", providers=["CPUExecutionProvider"])
-            self._app.prepare(ctx_id=0, det_size=(640, 640))
-            swapper_path = Path("models/inswapper_128.onnx")
-            if swapper_path.exists():
-                self._swapper = insightface.model_zoo.get_model(
-                    str(swapper_path), providers=["CPUExecutionProvider"]
-                )
-                logger.info("inswapper_128 loaded ✓")
-            else:
-                logger.warning("inswapper_128.onnx not found — blend pipeline only")
-            self._ready = True
-            logger.info("ImageProcessor ready ✓")
-        except Exception as e:
-            logger.warning(f"InsightFace init failed: {e}")
+        pass
 
     # ── Async entry ──────────────────────────────────────────────────────────
     async def generate(
@@ -696,12 +548,17 @@ class ImageProcessor:
         style_prompt: Optional[str] = None,
         studio_id: str = "",
         pose_id: str = "",
+        motion_id: str = "",
+        audio_path: Optional[str] = None,
+        voice_text: Optional[str] = None,
+        voice_name: Optional[str] = None,
     ) -> Tuple[bool, Optional[str]]:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(
             None, self._generate_sync,
             source_image_path, template_image_path, output_path,
-            studio_id, pose_id, style_prompt or "",
+            studio_id, pose_id, motion_id, style_prompt or "", gender, audio_path,
+            voice_text, voice_name,
         )
 
     def _generate_sync(
@@ -711,38 +568,71 @@ class ImageProcessor:
         output_path: str,
         studio_id: str,
         pose_id: str,
+        motion_id: str,
         style_prompt: str,
+        gender: str,
+        audio_path: Optional[str],
+        voice_text: Optional[str],
+        voice_name: Optional[str],
     ) -> Tuple[bool, Optional[str]]:
         try:
+            if studio_id == "kids_text_video":
+                kids_prompt = (
+                    f"{style_prompt}, child-safe family-friendly scene, joyful children, "
+                    "age-appropriate clothing and behavior, warm colorful cinematic animation, "
+                    "no danger, no violence, no logos, portrait social video. Include clear "
+                    "natural spoken dialogue matching the requested greeting, audible child-safe "
+                    "voice, synchronized mouth movement, and gentle background music."
+                )
+                return magic_hour_provider.text_to_video(
+                    kids_prompt, output_path, duration_seconds=5.0
+                )
+
             # Prompt-only generation (no source image)
             if studio_id == "custom_generator" or source_path == "prompt_only":
-                if settings.IMAGE_PROVIDER == "magic_hour":
-                    return magic_hour_provider.generate_image(style_prompt, output_path)
-                if settings.IMAGE_PROVIDER == "huggingface":
-                    try:
-                        from app.ai.huggingface_provider import huggingface_provider
-                        return huggingface_provider.generate_image(style_prompt, output_path)
-                    except ImportError:
-                        return False, "HuggingFace provider not available in this deployment."
-                if settings.IMAGE_PROVIDER == "gemini":
-                    try:
-                        from app.ai.gemini_provider import gemini_provider
-                        if not gemini_provider.configured:
-                            return False, (
-                                "Image generation is not configured. Add GEMINI_API_KEY to backend/.env "
-                                "and enable image API billing, or set IMAGE_PROVIDER=local."
-                            )
-                        return gemini_provider.generate_image(style_prompt, output_path)
-                    except ImportError:
-                        return False, "Gemini provider not available in this deployment."
-                ai_result = self._generate_ai_image(style_prompt, output_path)
-                if ai_result is not None:
-                    return ai_result
-                return False, "The local image model could not be loaded. Check backend logs."
+                return magic_hour_provider.generate_image(style_prompt, output_path)
+
+            expected_gender = PREMIUM_TEMPLATE_GENDERS.get(pose_id)
+            if expected_gender:
+                if gender not in {"male", "female"}:
+                    return False, "Choose Man or Woman before selecting a character template."
+                if gender != expected_gender:
+                    return False, (
+                        f"This template is for a {expected_gender} character. "
+                        f"Choose a {gender} template for the uploaded photo."
+                    )
+
+            if studio_id == "talking_photo":
+                if not audio_path and voice_text:
+                    generated_audio = output_path.replace(".mp4", "_voice.wav")
+                    ok, error = magic_hour_provider.generate_voice(
+                        voice_text[:500],
+                        voice_name or "Morgan Freeman",
+                        generated_audio,
+                    )
+                    if not ok:
+                        return False, error
+                    audio_path = generated_audio
+                if not audio_path:
+                    return False, "Talking Photo needs uploaded audio or a generated voice script."
+                return magic_hour_provider.talking_photo(
+                    source_path, audio_path, output_path, duration_seconds=5.0
+                )
 
             target_path = _download_pose_photo(studio_id, pose_id) or template_path
 
             if studio_id in VIDEO_STUDIOS:
+                if settings.FACE_SWAP_PROVIDER == "magic_hour" and magic_hour_provider.configured:
+                    swapped_path = output_path.replace(".mp4", "_motion_source.jpg")
+                    ok, err = magic_hour_provider.swap_photo(source_path, target_path, swapped_path)
+                    if not ok:
+                        return False, err
+                    return magic_hour_provider.image_to_video(
+                        swapped_path,
+                        MOTION_PROMPTS.get(motion_id, MOTION_PROMPTS["motion_subtle"]),
+                        output_path,
+                        duration_seconds=5.0,
+                    )
                 mp4_out = output_path if output_path.endswith(".mp4") else output_path.replace(".jpg", ".mp4")
                 return self._make_motion_video(source_path, target_path, mp4_out, studio_id, pose_id)
             else:
@@ -769,12 +659,7 @@ class ImageProcessor:
 
         tgt = self._resize_canvas(tgt, 512, 768)
 
-        if self._ready and self._swapper:
-            ok, err = self._pipeline_inswapper(src, tgt, output_path)
-        elif self._ready:
-            ok, err = self._pipeline_precision_blend(src, tgt, output_path)
-        else:
-            ok, err = self._pipeline_haar_blend(src, tgt, output_path)
+        ok, err = self._pipeline_haar_blend(src, tgt, output_path)
 
         # Apply style filter on top
         if ok:

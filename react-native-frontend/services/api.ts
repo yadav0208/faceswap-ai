@@ -2,17 +2,14 @@ import axios, { AxiosInstance } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-const isLocalWeb =
-  Platform.OS === 'web' &&
-  typeof window !== 'undefined' &&
-  ['localhost', '127.0.0.1'].includes(window.location.hostname);
+const isWebPreview = Platform.OS === 'web';
 
 // Local browser traffic goes directly to FastAPI; phones and Expo Go use the
 // configured public backend so the app is reachable outside localhost.
 //
 // Backend hosted on Railway — https://fortunate-empathy-production-07c6.up.railway.app
 export const API_BASE =
-  isLocalWeb
+  isWebPreview
     ? 'http://localhost:8000'
     : (process.env.EXPO_PUBLIC_API_URL || 'https://fortunate-empathy-production-07c6.up.railway.app').replace(/\/$/, '');
 
@@ -54,6 +51,24 @@ class ApiService {
     return res.data;
   }
 
+  async requestPhoneOtp(phoneNumber: string, purpose: 'login' | 'register' = 'login') {
+    const res = await this.client.post('/api/auth/phone/request-otp', {
+      phone_number: phoneNumber,
+      purpose,
+    });
+    return res.data as { message: string; expires_in: number; development_code?: string };
+  }
+
+  async verifyPhoneOtp(phoneNumber: string, code: string, fullName?: string) {
+    const res = await this.client.post('/api/auth/phone/verify-otp', {
+      phone_number: phoneNumber,
+      code,
+      full_name: fullName,
+    });
+    await AsyncStorage.setItem('auth_token', res.data.access_token);
+    return res.data;
+  }
+
   async logout() {
     await AsyncStorage.removeItem('auth_token');
   }
@@ -61,6 +76,36 @@ class ApiService {
   async getMe() {
     const res = await this.client.get('/api/auth/me');
     return res.data;
+  }
+
+  async getProfileStats() {
+    const res = await this.client.get('/api/auth/stats');
+    return res.data as { images: number; videos: number; total_creations: number };
+  }
+
+  async updateProfile(fullName: string) {
+    const res = await this.client.patch('/api/auth/me', { full_name: fullName });
+    return res.data as User;
+  }
+
+  async changePassword(currentPassword: string, newPassword: string) {
+    await this.client.post('/api/auth/change-password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+    });
+  }
+
+  async requestPasswordReset(email: string) {
+    const res = await this.client.post('/api/auth/password/forgot', { email });
+    return res.data as { message: string; expires_in: number; development_code?: string };
+  }
+
+  async resetPassword(email: string, code: string, newPassword: string) {
+    await this.client.post('/api/auth/password/reset', {
+      email,
+      code,
+      new_password: newPassword,
+    });
   }
 
   // ─── Poses ────────────────────────────────────────────────────────────────
@@ -157,6 +202,13 @@ class ApiService {
 
 export const api = new ApiService();
 
+export async function authFetch(input: string, init: RequestInit = {}) {
+  const token = await AsyncStorage.getItem('auth_token');
+  const headers = new Headers(init.headers);
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  return fetch(input, { ...init, headers });
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface PoseTemplate {
@@ -198,6 +250,7 @@ export interface User {
   email: string;
   full_name?: string;
   avatar_url?: string;
+  phone_number?: string;
   is_active: boolean;
   created_at: string;
 }

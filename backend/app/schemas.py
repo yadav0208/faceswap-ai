@@ -7,14 +7,31 @@ from datetime import datetime
 
 class UserRegister(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
-    email: EmailStr
-    password: str = Field(..., min_length=6)
-    full_name: Optional[str] = None
+    email: EmailStr = Field(..., max_length=100)
+    password: str = Field(..., min_length=8, max_length=128)
+    full_name: Optional[str] = Field(default=None, max_length=100)
 
 
 class UserLogin(BaseModel):
     username: str
     password: str
+
+
+class PhoneOtpRequest(BaseModel):
+    phone_number: str = Field(..., min_length=8, max_length=20)
+    purpose: str = Field(default="login", pattern="^(login|register)$")
+
+
+class PhoneOtpVerify(BaseModel):
+    phone_number: str = Field(..., min_length=8, max_length=20)
+    code: str = Field(..., min_length=6, max_length=6)
+    full_name: Optional[str] = Field(default=None, max_length=100)
+
+
+class OtpRequestOut(BaseModel):
+    message: str
+    expires_in: int = 300
+    development_code: Optional[str] = None
 
 
 class UserOut(BaseModel):
@@ -25,6 +42,7 @@ class UserOut(BaseModel):
     avatar_url: Optional[str]
     is_active: bool
     created_at: datetime
+    phone_number: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -34,6 +52,31 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserOut
+
+
+class ProfileStats(BaseModel):
+    images: int
+    videos: int
+    total_creations: int
+
+
+class UserProfileUpdate(BaseModel):
+    full_name: str = Field(..., min_length=1, max_length=100)
+
+
+class PasswordChange(BaseModel):
+    current_password: str = Field(..., min_length=6, max_length=128)
+    new_password: str = Field(..., min_length=8, max_length=128)
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirm(BaseModel):
+    email: EmailStr
+    code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
+    new_password: str = Field(..., min_length=8, max_length=128)
 
 
 # ─── Pose Template Schemas ───────────────────────────────────────────────────

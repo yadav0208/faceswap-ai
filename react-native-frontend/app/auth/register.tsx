@@ -1,126 +1,74 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView, Image,
+  ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
-import { API_BASE } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { api } from '../../services/api';
 import { Colors, Radius } from '../../constants/theme';
+
+function registrationErrorMessage(error: any): string {
+  const detail = error?.response?.data?.detail;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail) && typeof detail[0]?.msg === 'string') {
+    return detail[0].msg.replace(/^Value error,\s*/i, '');
+  }
+  if (error?.code === 'ECONNABORTED') {
+    return 'The server took too long to respond. Please try again in a moment.';
+  }
+  if (!error?.response) {
+    return 'The Anva AI server is unavailable. Check your connection and try again.';
+  }
+  return 'Something went wrong while creating your account. Please try again.';
+}
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const [form, setForm] = useState({ username: '', email: '', password: '', fullName: '' });
-  const [showPass, setShowPass] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function handleRegister() {
-    if (!form.username || !form.email || !form.password) {
-      Alert.alert('Required', 'Please fill in all required fields.');
-      return;
+  async function createAccount() {
+    if (!email.trim() || password.length < 8) {
+      return Alert.alert('Required', 'Enter an email and a password of at least 8 characters.');
     }
-    setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: form.username,
-          email: form.email,
-          password: form.password,
-          full_name: form.fullName || undefined,
-        }),
-      });
-      if (res.ok) {
-        router.replace('/(tabs)');
-      } else {
-        const d = await res.json().catch(() => ({}));
-        Alert.alert('Registration failed', d.detail || 'Something went wrong');
-      }
-    } catch {
-      Alert.alert('Error', 'Could not connect to server.');
+      setLoading(true);
+      const normalized = email.trim().toLowerCase();
+      const randomSuffix = Math.random().toString(36).slice(2, 8);
+      const username = `user_${Date.now().toString(36)}_${randomSuffix}`;
+      await api.register(username, normalized, password, fullName.trim() || undefined);
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      Alert.alert('Could not create account', registrationErrorMessage(error));
     } finally {
       setLoading(false);
     }
   }
 
-  const fields = [
-    { key: 'fullName', placeholder: 'Full Name (optional)', icon: 'person-outline', secure: false },
-    { key: 'username', placeholder: 'Username *', icon: 'at-outline', secure: false },
-    { key: 'email', placeholder: 'Email *', icon: 'mail-outline', secure: false },
-    { key: 'password', placeholder: 'Password *', icon: 'lock-closed-outline', secure: true },
-  ] as const;
-
   return (
-    <KeyboardAvoidingView
-      style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safe}>
-        <TouchableOpacity style={styles.close} onPress={() => router.back()}>
-          <Ionicons name="close" size={24} color="rgba(255,255,255,0.6)" />
-        </TouchableOpacity>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <Image
-            source={require('../../assets/brand/anva-mark.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.brandLabel}>ANVA AI</Text>
-          <Text style={styles.title}>Create account</Text>
-          <Text style={styles.subtitle}>Join Anva AI today</Text>
-
-          {fields.map((f) => (
-            <View key={f.key} style={styles.inputWrap}>
-              <Ionicons name={f.icon} size={18} color="rgba(255,255,255,0.4)" />
-              <TextInput
-                value={form[f.key]}
-                onChangeText={(v) => setForm((p) => ({ ...p, [f.key]: v }))}
-                placeholder={f.placeholder}
-                placeholderTextColor="rgba(255,255,255,0.3)"
-                secureTextEntry={f.secure && !showPass}
-                autoCapitalize={
-                  f.key === 'email' ? 'none' : f.key === 'username' ? 'none' : 'words'
-                }
-                keyboardType={f.key === 'email' ? 'email-address' : 'default'}
-                style={styles.input}
-              />
-              {f.secure && (
-                <TouchableOpacity onPress={() => setShowPass(!showPass)}>
-                  <Ionicons
-                    name={showPass ? 'eye-off-outline' : 'eye-outline'}
-                    size={18}
-                    color="rgba(255,255,255,0.4)"
-                  />
-                </TouchableOpacity>
-              )}
-            </View>
-          ))}
-
-          <TouchableOpacity onPress={handleRegister} style={styles.btn} activeOpacity={0.85}>
-            <LinearGradient
-              colors={[Colors.brand.goldDark, Colors.brand.gold, Colors.brand.goldLight]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={StyleSheet.absoluteFill}
-            />
-            {loading ? (
-              <ActivityIndicator color="#000" />
-            ) : (
-              <Text style={styles.btnText}>Create Account</Text>
-            )}
+    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <SafeAreaView style={styles.safe}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <TouchableOpacity onPress={() => router.back()} style={styles.back}>
+            <Ionicons name="arrow-back" size={22} color="#fff" />
           </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => router.push('/auth/login')}
-            style={styles.loginLink}
-          >
-            <Text style={styles.loginText}>
-              Already have an account?{' '}
-              <Text style={styles.loginBold}>Sign in</Text>
-            </Text>
+          <Text style={styles.brand}>ANVA AI</Text>
+          <Text style={styles.title}>Create account</Text>
+          <Text style={styles.subtitle}>Use your email and choose a secure password</Text>
+          <Field icon="person-outline" value={fullName} onChangeText={setFullName} placeholder="Full name" />
+          <Field icon="mail-outline" value={email} onChangeText={setEmail} placeholder="Email address" email />
+          <Field icon="lock-closed-outline" value={password} onChangeText={setPassword} placeholder="Password (8+ characters)" secure />
+          <TouchableOpacity style={styles.button} onPress={createAccount} disabled={loading}>
+            <LinearGradient colors={[Colors.brand.goldDark, Colors.brand.goldLight]} style={StyleSheet.absoluteFill} />
+            {loading ? <ActivityIndicator color="#090909" /> : <Text style={styles.buttonText}>Create Account</Text>}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.replace('/auth/login')}>
+            <Text style={styles.link}>Already registered? <Text style={styles.gold}>Sign in</Text></Text>
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
@@ -128,39 +76,38 @@ export default function RegisterScreen() {
   );
 }
 
+function Field({ icon, email, secure, ...props }: any) {
+  return (
+    <View style={styles.field}>
+      <Ionicons name={icon} size={19} color="#777" />
+      <TextInput
+        {...props}
+        style={styles.input}
+        placeholderTextColor="#666"
+        keyboardType={email ? 'email-address' : 'default'}
+        autoCapitalize={email ? 'none' : 'words'}
+        secureTextEntry={secure}
+      />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.bg.primary },
   safe: { flex: 1 },
-  close: { position: 'absolute', top: 54, right: 20, zIndex: 10, padding: 8 },
-  content: { paddingHorizontal: 24, paddingTop: 80, paddingBottom: 40, gap: 12 },
-  logo: {
-    width: 64, height: 64, borderRadius: 20,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 4, alignSelf: 'center',
+  content: { flexGrow: 1, justifyContent: 'center', padding: 24, gap: 13 },
+  back: { position: 'absolute', top: 18, left: 20, padding: 8 },
+  brand: { color: Colors.brand.gold, fontSize: 11, fontWeight: '800', letterSpacing: 3, textAlign: 'center' },
+  title: { color: '#fff', fontSize: 32, fontWeight: '800', textAlign: 'center' },
+  subtitle: { color: '#777', fontSize: 15, textAlign: 'center', marginBottom: 12 },
+  field: {
+    minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 11,
+    paddingHorizontal: 16, borderRadius: Radius.md, backgroundColor: Colors.bg.card,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.09)',
   },
-  brandLabel: {
-    fontSize: 11, fontWeight: '800', letterSpacing: 2.5,
-    color: Colors.brand.gold, textAlign: 'center', marginBottom: 4,
-  },
-  title: { fontSize: 28, fontWeight: '700', color: '#fff', textAlign: 'center' },
-  subtitle: {
-    fontSize: 15, color: 'rgba(255,255,255,0.45)',
-    textAlign: 'center', marginBottom: 16,
-  },
-  inputWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: Colors.bg.card,
-    borderRadius: Radius.md, paddingHorizontal: 14, paddingVertical: 14,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-  },
-  input: { flex: 1, fontSize: 15, color: '#fff' },
-  btn: {
-    height: 54, borderRadius: Radius.full,
-    alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden', marginTop: 8,
-  },
-  btnText: { fontSize: 16, fontWeight: '800', color: '#000' },
-  loginLink: { alignItems: 'center', marginTop: 8 },
-  loginText: { fontSize: 14, color: 'rgba(255,255,255,0.45)' },
-  loginBold: { color: Colors.brand.gold, fontWeight: '600' },
+  input: { flex: 1, color: '#fff', fontSize: 16, paddingVertical: 16, outlineStyle: 'none' } as any,
+  button: { height: 56, borderRadius: Radius.full, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', marginTop: 6 },
+  buttonText: { color: '#090909', fontSize: 16, fontWeight: '800' },
+  link: { color: '#777', textAlign: 'center', marginTop: 7 },
+  gold: { color: Colors.brand.gold, fontWeight: '700' },
 });
